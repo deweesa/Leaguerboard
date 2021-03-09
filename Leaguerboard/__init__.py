@@ -24,7 +24,7 @@ def create_app(test_config=None):
     db.init_app(app)
 
 
-    @app.route('/hello')
+    @app.route('/')
     def hello():
         return 'Welcome to Leaguerboard!'
 

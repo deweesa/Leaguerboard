@@ -1,6 +1,7 @@
 drop table if exists summoner;
 drop table if exists match;
 drop table if exists gamers;
+drop table if exists failed_match_lookup;
 
 create table summoner (
     accountid text primary key,
@@ -23,6 +24,10 @@ create table match (
     seasonId integer,
     timestamp integer,
     gameVersion text
+);
+
+create table failed_match_lookup (
+    gameId integer
 );
 
 create table gamers (
