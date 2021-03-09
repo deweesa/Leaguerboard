@@ -92,6 +92,10 @@ def populate_db():
 
 def populate_summoner(db, gamers):
     for row in gamers:
+        exists_check = db.execute('select 1 from summoner where summonerName = ?', (row['summonerName'],))
+        if(exists_check.fetchone()):
+            continue
+
         response = requests.get('https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + row['summonerName'], params = PARAMS)
         
 
@@ -152,7 +156,7 @@ def get_match_details(matchlist, db):
         if(row.fetchone()):
             continue
 
-        if(match['queue'] == 0 || match['queue'] >= 2000):
+        if(match['queue'] == 0 or match['queue'] >= 2000):
             continue
 
         response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(match['gameId']), params = PARAMS)
