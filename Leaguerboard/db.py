@@ -7,6 +7,7 @@ import json
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
 
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
@@ -92,19 +93,11 @@ def populate_db():
 
 def populate_summoner(db, gamers):
     for row in gamers:
-        response = requests.get('https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + row['summonerName'], params = PARAMS)
-        
+        exists_check = db.execute('select 1 from summoner where summonerName = ?', (row['summonerName'],))
+        if(exists_check.fetchone()):
+            continue
 
-        while(response.status_code == 429):
-            time.sleep(int(response.headers['retry-after']))
-            response = requests.get('https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/' + row['summonerName'], params = PARAMS)
-
-        if(response.status_code != 200):
-            click.echo(response.json())
-            click.echo(row['summonerName'])
-            break
-
-        response = response.json()            
+        response = get_summoner_info(row['summonerName'])
 
         db.execute(
             'insert into summoner values (?,?,?,?,?,?,?)',
@@ -119,54 +112,30 @@ def populate_match(db):
         'select summonerName, accountId from summoner'
     ).fetchall()
 
-    loc_params = {}
-    loc_params['api_key'] = PARAMS['api_key']
-
     for summoner in summoners:
-        loc_params['beginIndex'] = 0
-        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + summoner['accountId'].strip(), params = loc_params)
-
-        while(response.status_code == 429):
-            time.sleep(int(response.header['retry-after']))
-            response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + summoner['accountId'], params = loc_params)
-
-        response = response.json()
+        response = get_matchlist(summoner['accountId'])
+        beginIndex = 0
 
         while(response['matches']):
-            get_match_details(response['matches'], db)
+            insert_match_details(response['matches'], db)
+            beginIndex += 100
 
-            loc_params['beginIndex'] += 100
-            response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + summoner['accountId'], params = loc_params)
-
-            while(response.status_code == 429):
-                time.sleep(int(response.headers['retry-after']))
-                response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + summoner['accountId'], params = loc_params)
-
-            response = response.json()
+            response = get_matchlist(summoner['accountId'], beginIndex)
 
 
-def get_match_details(matchlist, db):
+def insert_match_details(matchlist, db):
     for match in matchlist:
         print(match['gameId'])
         row = db.execute('select 1 from match where gameId = ?', (match['gameId'],))
         if(row.fetchone()):
             continue
 
-        if(match['queue'] == 0 || match['queue'] >= 2000):
+        if(match['queue'] == 0 or match['queue'] >= 2000):
             continue
 
-        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(match['gameId']), params = PARAMS)
-
-        while(response.status_code == 429):
-            time.sleep(int(response.headers['retry-after']))
-            response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(match['gameId']), params = PARAMS)
-
-        #TODO make it so that errors serverside of the api are tried again at a later time
-        if(response.status_code >= 500): continue
-
-        if(response.status_code != 200): print(response.json())
-
-        response = response.json()
+        response = get_match_details(match['gameId'], db)
+        if(response is None):
+            continue
         
         summoners = {}
         team_win = {}
