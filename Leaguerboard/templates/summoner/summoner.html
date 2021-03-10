@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Summoner Stats{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <h3>Select a summoner</h3>
+    <form method="post">
+    {% for summoner in summoners %}
+        <input type="radio" id="{{ summoner['summonerName'] }}" name="summoner" value="{{ summoner['summonerName'] }}">
+        <label for="{{ summoner['summonerName'] }}">{{ summoner['summonerName'] }}</label><br>
+    {% endfor %}
+        <input type="submit" value="submit">
+    </form>
+{% endblock %}
+
