@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}{{ summoner }}'s Stats{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>Win Percentage: {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
+<p>Games Won: {{ win_count }}</p>
+<p>Games Played: {{ game_count }} </p>
+{% endblock %}

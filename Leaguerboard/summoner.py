@@ -21,10 +21,10 @@ def summoner_stats(summoner):
 
     game_count = db.execute(
         'select count(1) from match where summonerName = ?', (summoner,)
-    ).fetchone()
+    ).fetchone()[0]
 
     win_count = db.execute(
         'select count(1) from match where summonerName = ? and win = 1', (summoner,)
-    ).fetchone()
+    ).fetchone()[0]
 
-    return 'games: ' + str(game_count[0]) + '\nwins: ' + str(win_count[0]) + "\npercentage: " + "%.2f%%" % (100 * win_count[0]*1.0/game_count[0])
+    return render_template('summoner/summoner_stat.html', summoner=summoner, win_count=win_count, game_count=game_count)
