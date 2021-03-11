@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Team Selection{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <p>Select a group of summoners for teams stats</p>
+    
+    <form method="post">
+        {% for summoner in summoners %}
+        <input type="checkbox" id="summoner{{ loop.index }}" name= "summoner" value="{{ summoner['summonerName'] }}">
+        <label for="summoner{{ loop.index }}"> "{{ summoner['summonerName'] }}"</label><br>
+        {% endfor %}
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+
+{% endblock %}
