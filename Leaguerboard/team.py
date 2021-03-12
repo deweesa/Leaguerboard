@@ -10,6 +10,10 @@ def team():
     if request.method == 'POST':
         if(len(request.form.getlist('summoner')) > 5):
             return "Invalid team: More than 5 players (assuming a lot about potential games played)"
+        if(len(request.form.getlist('summoner')) < 2):
+            return "Invalid team: Please check more than one player"
+
+        
 
         return str(request.form.getlist('summoner'))
 
