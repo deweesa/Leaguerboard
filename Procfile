@@ -1,1 +1,1 @@
-web: gunicorn Leaguerboard:app
+web: gunicorn __init__:Leaguerboard
