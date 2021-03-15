@@ -26,6 +26,9 @@ def create_app(test_config=None):
     from . import summoner
     app.register_blueprint(summoner.bp)
 
+    from . import team
+    app.register_blueprint(team.bp)
+
 
     @app.route('/')
     def home():

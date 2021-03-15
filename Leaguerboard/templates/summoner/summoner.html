@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Summoners{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <p>Select a Summoner to see their stats</p>
+    <ul>
+    {% for summoner in summoners %}
+    <li><a href="{{ url_for('summoner.summoner_stats', summoner=summoner['summonerName']) }}">{{ summoner['summonerName'] }}</a>
+    {% endfor %}
+    </ul>
+{% endblock %}
+

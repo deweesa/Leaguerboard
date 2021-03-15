@@ -1,0 +1,16 @@
+<!doctype html>
+<title>{% block title %}{% endblock %} - Leaguerboard</title>
+<nav>
+    <h1>Leaguerboard</h1>
+    <ul>
+        <li><a href={{ url_for('summoner.summoner') }}>player stats</a></li>
+        <li>champ stats</li>
+        <li><a href={{ url_for('team.team') }}>team stats</a></li>
+    </ul>
+</nav>
+<section class="content">
+    <header>
+        {% block header %}{% endblock %}
+    </header>
+    {% block content %}{% endblock %}
+</section>
