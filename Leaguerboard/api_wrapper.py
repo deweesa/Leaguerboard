@@ -28,7 +28,7 @@ def get_matchlist(accountId: str, beginIndex: int = 0) -> json:
 
     while(response.status_code == 429):
         time.sleep(int(response.header['retry-after']))
-        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + summoner['accountId'], params = loc_params)
+        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matchlists/by-account/' + accountId.strip(), params = loc_params)
 
     return response.json()
 
@@ -38,7 +38,7 @@ def get_match_details(matchId, db) -> json:
 
     while(response.status_code == 429):
         time.sleep(int(response.headers['retry-after']))
-        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(match['gameId']), params = PARAMS)
+        response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(matchId), params = PARAMS)
 
     if(response.status_code >= 500):
         db.execute('insert into failed_match_lookup values (?)', (matchId,)) 
