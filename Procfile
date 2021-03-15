@@ -1,1 +1,1 @@
-web: gunicorn __init__:Leaguerboard
+web: gunicorn "Leaguerboard:create_app()"
