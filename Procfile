@@ -1,1 +1,1 @@
-web: gunicorn app:Leagureboard
+web: gunicorn app:Leaguerboard
