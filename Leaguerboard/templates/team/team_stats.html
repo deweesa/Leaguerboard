@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Team Stats{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>Win percentage {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
+<p>Games won: {{ win_count }}</p>
+<p>Games Played: {{ game_count }}</p>
+<br>
+<ul>
+    {% for teammate in team %}
+    <li><a href ="{{ url_for('summoner.summoner_stats', summoner=teammate) }}">{{ teammate }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}
