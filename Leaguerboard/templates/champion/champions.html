@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Champions{% endblock %}</h1>
+{% endblock %}
+
+{% block content %} 
+    {% for champ in champions %}
+        <p>{{ champ['name'] }}</p>
+    {% endfor %}
+{% endblock %}
