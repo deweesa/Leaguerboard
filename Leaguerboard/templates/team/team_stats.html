@@ -5,13 +5,18 @@
 {% endblock %}
 
 {% block content %}
-<p>Win percentage {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
-<p>Games won: {{ win_count }}</p>
-<p>Games Played: {{ game_count }}</p>
-<br>
-<ul>
-    {% for teammate in team %}
-    <li><a href ="{{ url_for('summoner.summoner_stats', summoner=teammate) }}">{{ teammate }}</a></li>
-    {% endfor %}
-</ul>
+{% if game_count == 0 %}
+    <p>No games found with this team comp</p>
+    <p><a href={{ url_for('team.team') }}>Team Selector</a></p>
+{% else %}
+    <p>Win percentage {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
+    <p>Games won: {{ win_count }}</p>
+    <p>Games Played: {{ game_count }}</p>
+    <br>
+    <ul>
+        {% for teammate in team_selection %}
+        <li><a href ="{{ url_for('summoner.summoner_stats', summoner=teammate) }}">{{ teammate }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
 {% endblock %}

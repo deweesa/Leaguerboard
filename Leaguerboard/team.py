@@ -36,11 +36,7 @@ def team():
     
         db.close()
 
-        result = str(team_selection)
-        result += '\n Games won: ' + str(win_count)
-        result += '\n Games played: ' + str(game_count)
-
-        return render_template('team/team_stats.html', game_count=game_count, win_count=win_count, team=team_selection)
+        return render_template('team/team_stats.html', game_count=game_count, win_count=win_count, team_selection=team_selection)
 
     summoners = db.execute('select summonerName from summoner').fetchall()
 
