@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}{{ champ['name'] }}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
+    <h2>{{ champ['title'] }} </h2>
+    <p> {{ champ['lore'] }} </p>
+    <p> {{ game_count }} </p>
+    <p> {{ win_count }} </p>
+{% endblock %}

@@ -6,6 +6,8 @@
 
 {% block content %} 
     {% for champ in champions %}
-        <p>{{ champ['name'] }}</p>
+        <ul>
+            <li><a href="{{ url_for('champions.champion', champ=champ['id']) }}">{{ champ['name'].strip() }}</a></li>
+        </ul>
     {% endfor %}
 {% endblock %}
