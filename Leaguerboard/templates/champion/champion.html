@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block style %}
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 15px;
+    }
+{% endblock %}
+
+{% block header %}
+    <h1>{% block title %}{{ champ['name'] }}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
+    <h3>{{ champ['title'] }} </h3>
+    <p> {{ champ['lore'] }} </p>
+    <p> {{ game_count }} </p>
+    <p> {{ win_count }} </p>
+
+    <table>
+        <tr>
+            <th> Summoner </th>
+            <th> Games Played </th>
+            <th> Games Won </th>
+            <th> Win % </th>
+        </tr>
+        {% for stat_line in player_stats %}
+        <tr>
+            <td style="text-align:center">{{ stat_line['summonerName'] }}</td>
+            <td style="text-align:center">{{ stat_line['game_count'] }}</td>
+            <td style="text-align:center">{{ stat_line['win_count'] }}</td>
+            {% if stat_line['game_count'] == 0 %}
+            <td style="text-align:center">-</td>
+            {% else %}
+            <td style="text-align:center">{{"%.2f%%" % (100.0 * stat_line['win_count']/stat_line['game_count']) }}</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

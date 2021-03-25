@@ -29,6 +29,8 @@ def create_app(test_config=None):
     from . import team
     app.register_blueprint(team.bp)
 
+    from . import champion
+    app.register_blueprint(champion.bp)
 
     @app.route('/')
     def home():

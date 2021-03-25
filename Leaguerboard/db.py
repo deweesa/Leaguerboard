@@ -140,7 +140,11 @@ def insert_match_details(matchlist, db):
         summoners = {}
         team_win = {}
 
-        participant_ids = response['participantIdentities']
+        try:
+            participant_ids = response['participantIdentities']
+        except KeyError:
+            print(response)
+            input("Press any key to continue")
 
         for participant in participant_ids:
             row = db.execute(
