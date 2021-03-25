@@ -7,7 +7,7 @@
 {% block content %} 
     {% for champ in champions %}
         <ul>
-            <li><a href="{{ url_for('champions.champion', champ=champ['id']) }}">{{ champ['name'].strip() }}</a></li>
+            <li><a href="{{ url_for('champions.champion', champ=champ['id']) }}"><img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}" style="vertical-align:middle">    {{ champ['name'].strip() }}</a></li>
         </ul>
     {% endfor %}
 {% endblock %}
