@@ -32,7 +32,7 @@ def get_matchlist(accountId: str, beginIndex: int = 0) -> json:
 
     return response.json()
 
-
+#Old database refrence
 def get_match_details(matchId, db) -> json:
     response = requests.get('https://na1.api.riotgames.com/lol/match/v4/matches/' + str(matchId), params = PARAMS)
 
