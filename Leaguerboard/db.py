@@ -76,7 +76,9 @@ def populate_summoner(gamers):
             if(exists_check.fetchone()):
                 continue
 
+
             response = get_summoner_info(row['summonername'])
+            if(response is None): continue
             response_tuple = (response['accountId'], response['profileIconId'], response['revisionDate'], response['name'], response['id'], response['puuid'], response['summonerLevel'])
             conn.execute(text('insert into summoner values :response'), response=response_tuple)
 
@@ -96,7 +98,16 @@ def populate_match():
             response = get_matchlist(summoner['accountid'], beginIndex)
 
 
-def insert_match_details(matchlist):
+def update_match():
+    db = get_db()
+
+    summoners = db.execute('select * from summoner').fetchall()
+
+    for summoner in summoners:
+        most_recent_in_db = db.execute('select max(gameId) from match where summonerName = ?', summoner['summonerName']).fetchone()[0]
+    #HEY YO, when you come back to this, get the most recent of all player's that we're tracking, then use that list when updataing the match
+
+def insert_match_details(matchlist, db):
     for match in matchlist:
         print(match['gameId'])
 
