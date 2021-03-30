@@ -26,7 +26,7 @@ def champion(champ):
     champ_dict = champ_full[champ]
     key = champ_dict['key']
 
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         game_count = conn.execute(text('select count (1) from match where champion = :champ'), champ=key).fetchone()[0]
         win_count = conn.execute(text('select count (1) from match where champion = :champ and win = true'), champ=key).fetchone()[0]
 
@@ -59,7 +59,7 @@ def champion(champ):
     key = champ_dict['key']
 
     #game_count = db.execute('select count(*) from match where champion = ?', (key,)).fetchone()[0]
-    with database.engine.connect() as conn:
+    with database.engine.conect() as conn:
         game_count = db.execute(text('select count(1) from match where champion = :champ'), champ=key)
 
     if game_count == 0:

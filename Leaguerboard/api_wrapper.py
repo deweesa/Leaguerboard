@@ -28,7 +28,7 @@ def get_matchlist(accountId: str, beginIndex: int = 0) -> json:
     return _api_helper(url, method_input, local_params)
 
 
-def get_match_details(matchId, db) -> json:
+def get_match_details(matchId) -> json:
     url='https://na1.api.riotgames.com/lol/match/v4/matches/'
     method_input=str(matchId)
 

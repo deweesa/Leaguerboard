@@ -45,20 +45,19 @@ def pop_db_command():
 @click.command('clear-sum')
 @with_appcontext
 def clear_summoner():
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         conn.execute(text('delete from summoner'))
 
 
 @click.command('clear-match')
 @with_appcontext
 def clear_match():
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         conn.execute(text('delete from match'))
-        conn.execute(text('vacuum'))
 
 
 def populate_db():
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         gamers = conn.execute(text('select * from gamers')).fetchall()
 
     populate_summoner(gamers)
@@ -70,24 +69,28 @@ def populate_db():
 
 def populate_summoner(gamers):
     for row in gamers:
-        with database.engine.connect() as conn:
+        print(row['summonername'])
+        with database.engine.begin() as conn:
             exists_check = conn.execute(text('select 1 from summoner where summonername = :sum_name'), sum_name=row['summonername'])
 
-            if(exists_check.fetchone()):
+            if(exists_check.fetchone() is not None):
                 continue
-
+            print('where am i')
 
             response = get_summoner_info(row['summonername'])
             if(response is None): continue
+            print('who am i')
             response_tuple = (response['accountId'], response['profileIconId'], response['revisionDate'], response['name'], response['id'], response['puuid'], response['summonerLevel'])
+            print(response_tuple)
             conn.execute(text('insert into summoner values :response'), response=response_tuple)
 
 
 def populate_match():
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         summoners = conn.execute(text('select summonername, accountid from summoner')).fetchall()
 
     for summoner in summoners:
+        print(summoner['summonername'])
         response = get_matchlist(summoner['accountid'])
         beginIndex = 0
 
@@ -107,11 +110,11 @@ def update_match():
         most_recent_in_db = db.execute('select max(gameId) from match where summonerName = ?', summoner['summonerName']).fetchone()[0]
     #HEY YO, when you come back to this, get the most recent of all player's that we're tracking, then use that list when updataing the match
 
-def insert_match_details(matchlist, db):
+def insert_match_details(matchlist):
     for match in matchlist:
         print(match['gameId'])
 
-        with database.engine.connect() as conn:
+        with database.engine.begin() as conn:
             row = conn.execute(text('select 1 from match where gameid = :game_id'), 
                     game_id=match['gameId'])
             
@@ -135,7 +138,7 @@ def insert_match_details(matchlist, db):
             input("Press any key to continue")
 
         for participant in participant_ids:
-           with database.engine.connect() as conn:
+           with database.engine.begin() as conn:
                 row = conn.execute(text('select 1 from summoner where summonername = :sum_name'),
                         sum_name=participant['player']['summonerName'])
 
@@ -172,7 +175,7 @@ def insert_match_details(matchlist, db):
             match_tuple = (gameId, summonerName, win, champion, role,
                            lane, queue, seasonId, timestamp, gameVersion)
 
-            with database.engine.connect() as conn:
+            with database.engine.begin() as conn:
                 conn.execute(text('insert into match values :match_tuple'), 
                         match_tuple=match_tuple)
 

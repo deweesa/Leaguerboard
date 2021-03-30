@@ -17,7 +17,7 @@ def team():
         if(len(team_selection) < 2):
             return "Invalid team: Please check more than one player"
         
-        with database.engine.connect() as conn:
+        with database.engine.begin() as conn:
             conn.execute('drop table if exists team_stat')
             conn.execute('''create table team_stat (
                                 gameId BigInt,
@@ -36,7 +36,7 @@ def team():
 
         return render_template('team/team_stats.html', game_count=game_count, win_count=win_count, team_selection=team_selection)
 
-    with database.engine.connect() as conn:
+    with database.engine.begin() as conn:
         summoners = conn.execute('select summonername from summoner').fetchall()
 
     return render_template('team/team.html', summoners=summoners)
