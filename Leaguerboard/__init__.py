@@ -1,13 +1,28 @@
 import os
 
 from flask import (Flask, render_template)
+from flask_sqlalchemy import SQLAlchemy
+
+database = SQLAlchemy()
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    
+    db_user = str(os.getenv('DB_USER'))
+    db_password = str( os.getenv('DB_PASSWORD'))
+    db_host = str(os.getenv('DB_HOST'))
+    db_port = str(os.getenv('DB_PORT'))
+    db_name = str(os.getenv('DB_NAME'))
+
     app.config.from_mapping(
         SECRET_KEY='dev',
-        DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
+        #DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
+        SQLALCHEMY_DATABASE_URI = 'postgresql://'+db_user+':'+db_password+'@'+db_host+':'+db_port+'/'+db_name,
+        SQLALCHEMY_TRACK_MODIFICATIONS = False
     )
+
+    database.init_app(app)
+    
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)

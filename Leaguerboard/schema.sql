@@ -1,45 +1,45 @@
-drop table if exists summoner;
-drop table if exists match;
-drop table if exists gamers;
-drop table if exists failed_match_lookup;
+DROP TABLE IF EXISTS summoner;
+DROP TABLE IF EXISTS match;
+DROP TABLE IF EXISTS gamers;
+/*DROP TABLE IF EXISTS failed_match_lookup;*/
 
-create table summoner (
-    accountid text primary key,
-    profileIconId integer,
-    revisionDate integer, 
+CREATE TABLE summoner (
+    accountid varchar(56) primary key,
+    profileIconId smallint,
+    revisionDate bigint, 
     summonerName text,
-    id text,
-    puuid text, 
-    summonerLevel integer
+    id varchar(63),
+    puuid char(78), 
+    summonerLevel bigint
 );
 
-create table match (
-    gameId integer,
+CREATE TABLE match (
+    gameId bigint,
     summonerName text,
-    win integer,
-    champion integer, 
+    win boolean,
+    champion smallint, 
     role text,
     lane text,
     queue integer,
     seasonId integer,
-    timestamp integer,
+    timestamp bigint,
     gameVersion text
 );
 
-create table failed_match_lookup (
+/*CREATE TABLE failed_match_lookup (
     gameId integer
-);
+);*/
 
-create table gamers (
+CREATE TABLE gamers (
     summonerName text
 );
 
-insert into gamers values ("Amon Byrne");
-insert into gamers values ("BluffMountain");
-insert into gamers values ("BluffMountain72");
-insert into gamers values ("FocusK");
-insert into gamers values ("ForeseenBison");
-insert into gamers values ("Moisturiser");
-insert into gamers values ("Pasttugboat");
-insert into gamers values ("stumblzzz");
-insert into gamers values ("JasaD15");
+INSERT INTO gamers VALUES ('Amon Byrne');
+INSERT INTO gamers VALUES ('BluffMountain');
+INSERT INTO gamers VALUES ('BluffMountain72');
+INSERT INTO gamers VALUES ('FocusK');
+INSERT INTO gamers VALUES ('ForeseenBison');
+INSERT INTO gamers VALUES ('Moisturiser');
+INSERT INTO gamers VALUES ('Pasttugboat');
+INSERT INTO gamers VALUES ('stumblzzz');
+INSERT INTO gamers VALUES ('JasaD15');
