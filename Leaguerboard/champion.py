@@ -1,6 +1,7 @@
 from flask import (Blueprint, render_template, request)
-from Leaguerboard.db import get_db
+from sqlalchemy import text
 import json
+from . import database
 
 bp = Blueprint('champions', __name__)
 
@@ -25,30 +26,41 @@ def champion(champ):
     champ_dict = champ_full[champ]
     key = champ_dict['key']
 
-    db = get_db()
+    with database.engine.connect() as conn:
+        game_count = conn.execute(text('select count (1) from match where champion = :champ'), champ=key).fetchone()[0]
+        win_count = conn.execute(text('select count (1) from match where champion = :champ and win = true'), champ=key).fetchone()[0]
 
-    game_count = db.execute('select count(*) from match where champion = ?', (key,)).fetchone()[0] 
-    win_count = db.execute('select count(*) from match where champion = ? and win = 1', (key,)).fetchone()[0]
-
-    players = db.execute('select distinct(summonerName) from match where champion = ?', (key,)).fetchall()
-
-    player_stats = []
-
-    for player in players:
-        stat_line = {}
-        stat_line['summonerName'] = player['summonerName']
-        stat_line['game_count'] = db.execute('select count(*) from match where champion = ? and summonerName = ?', (key, player['summonerName'])).fetchone()[0]
-        stat_line['win_count'] = db.execute('select count(*) from match where champion = ? and summonerName = ? and win = 1', (key, player['summonerName'])).fetchone()[0]
-        player_stats.append(stat_line)
+        players = conn.execute(text('select distinct(summonername) from match where champion = :champ'), champ=key)
         
+        player_stats = []
+
+        for player in players:
+            stat_line = {}
+            stat_line['summonername'] = player['summonername']
+            stat_line['game_count'] = conn.execute(text('''select count(1) from match 
+                                                           where champion = :champ 
+                                                                 and summonername = :sum_name'''), 
+                                                   champ=key, sum_name=player['summonername']).fetchone()[0]
+
+            stat_line['win_count'] = conn.execute(text('''select count(1) from match 
+                                                          where champion = :champ 
+                                                                 and summonername = :sum_name 
+                                                                 and win = true'''), 
+                                                   champ=key, sum_name=player['summonername']).fetchone()[0]
+
+            player_stats.append(stat_line)
+            
     player_stats.sort(reverse=True, key=lambda stat_line: stat_line['game_count'])
     return render_template('champion/champion.html', champ = champ_dict, game_count = game_count, win_count = win_count, player_stats = player_stats)
 
 
-def champ_winrate(champ_dict):
+'''def champ_winrate(champ_dict):
     db = get_db()
     key = champ_dict['key']
-    game_count = db.execute('select count(*) from match where champion = ?', (key,)).fetchone()[0]
+
+    #game_count = db.execute('select count(*) from match where champion = ?', (key,)).fetchone()[0]
+    with database.engine.connect() as conn:
+        game_count = db.execute(text('select count(1) from match where champion = :champ'), champ=key)
 
     if game_count == 0:
         return 0
@@ -56,3 +68,4 @@ def champ_winrate(champ_dict):
     win_count = db.execute('select count(*) from match where champion = ? and win = 1', (key,)).fetchone()[0]
 
     return 100.0 * win_count / game_count
+'''

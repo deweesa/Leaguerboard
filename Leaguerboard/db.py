@@ -8,6 +8,7 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
+from . import database
 
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
@@ -188,16 +189,12 @@ def insert_match_details(matchlist, db):
             )
             db.commit()
 
-   
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
+        #g.db = create_engine(current_app.config['DATABASE_URI'])
+        print('this is no more')
+    return 'g.db'
 
-    return g.db
 
 
 def close_db(e=None):
