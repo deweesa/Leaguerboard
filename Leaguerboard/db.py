@@ -9,6 +9,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
 from . import database
+from sqlalchemy import text
 
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
@@ -44,97 +45,72 @@ def pop_db_command():
 @click.command('clear-sum')
 @with_appcontext
 def clear_summoner():
-    db = get_db()
-
-    db.execute(
-        'delete from summoner'
-    )
-
-    db.commit()
-
-    db.execute(
-        'vacuum'
-    )
-
-    db.commit()
+    with database.engine.connect() as conn:
+        conn.execute(text('delete from summoner'))
 
 
 @click.command('clear-match')
 @with_appcontext
 def clear_match():
-    db = get_db()
-
-    db.execute(
-        'delete from match'
-    )
-
-    db.commit()
-
-    db.execute(
-        'vacuum'
-    )
-
-    db.commit()
-
+    with database.engine.connect() as conn:
+        conn.execute(text('delete * from match'))
+        conn.execute(text('vacuum'))
 
 
 def populate_db():
-    db = get_db()
+    with database.engine.connect() as conn:
+        gamers = conn.execute(text('select * from gamers')).fetchall()
 
-    gamers = db.execute(
-        'select * from gamers'
-    ).fetchall()
-
-    populate_summoner(db, gamers)
+    populate_summoner(gamers)
     click.echo('Summoner table populated.')
 
-    populate_match(db)
+    populate_match()
     click.echo('Match table populated.')
 
 
-def populate_summoner(db, gamers):
+def populate_summoner(gamers):
     for row in gamers:
-        exists_check = db.execute('select 1 from summoner where summonerName = ?', (row['summonerName'],))
-        if(exists_check.fetchone()):
-            continue
+        with database.engine.connect() as conn:
+            exists_check = conn.execute(text('select 1 from summoner where summonername = :sum_name'), sum_name=row['summonername'])
 
-        response = get_summoner_info(row['summonerName'])
+            if(exists_check.fetchone()):
+                continue
 
-        db.execute(
-            'insert into summoner values (?,?,?,?,?,?,?)',
-            (response['accountId'], response['profileIconId'], response['revisionDate'], 
-             response['name'], response['id'], response['puuid'], response['summonerLevel'])
-        )
-        db.commit()
+            response = get_summoner_info(row['summonername'])
+            response_tuple = (response['accountId'], response['profileIconId'], response['revisionDate'], response['name'], response['id'], response['puuid'], response['summonerLevel'])
+            conn.execute(text('insert into summoner values :response'), response=response_tuple)
 
 
-def populate_match(db):
-    summoners = db.execute(
-        'select summonerName, accountId from summoner'
-    ).fetchall()
+def populate_match():
+    with database.engine.connect() as conn:
+        summoners = conn.execute(text('select summonername, accountid from summoner')).fetchall()
 
     for summoner in summoners:
-        response = get_matchlist(summoner['accountId'])
+        response = get_matchlist(summoner['accountid'])
         beginIndex = 0
 
         while(response['matches']):
-            insert_match_details(response['matches'], db)
+            insert_match_details(response['matches'])
             beginIndex += 100
 
-            response = get_matchlist(summoner['accountId'], beginIndex)
+            response = get_matchlist(summoner['accountid'], beginIndex)
 
 
-def insert_match_details(matchlist, db):
+def insert_match_details(matchlist):
     for match in matchlist:
         print(match['gameId'])
-        row = db.execute('select 1 from match where gameId = ?', (match['gameId'],))
+
+        with database.engine.connect() as conn:
+            row = conn.execute(text('select 1 from match where gameid = :game_id'), 
+                    game_id=match['gameId'])
+            
         if(row.fetchone()):
             continue
 
         if(match['queue'] == 0 or match['queue'] >= 2000):
             continue
 
-        response = get_match_details(match['gameId'], db)
+        response = get_match_details(match['gameId'])
         if(response is None):
             continue
         
@@ -148,12 +124,12 @@ def insert_match_details(matchlist, db):
             input("Press any key to continue")
 
         for participant in participant_ids:
-            row = db.execute(
-                'select 1 from summoner where summonerName = ?', (participant['player']['summonerName'],)
-            )
+           with database.engine.connect() as conn:
+                row = conn.execute(text('select 1 from summoner where summonername = :sum_name'),
+                        sum_name=participant['player']['summonerName'])
 
-            if(row.fetchone()):
-                summoners[participant['participantId']] = participant['player']['summonerName']
+        if(row.fetchone()):
+            summoners[participant['participantId']] = participant['player']['summonerName']
 
         teams = response['teams']
 
@@ -174,20 +150,21 @@ def insert_match_details(matchlist, db):
 
             summonerName = summoners[participant['participantId']]
             
-            if(team_win[participant['teamId']] == "Fail"): win = 0
-            else: win = 1
+            if(team_win[participant['teamId']] == "Fail"): win = False
+            else: win = True
 
             champion = participant['championId']
 
             role = participant['timeline']['role']
             lane = participant['timeline']['lane']
 
-            db.execute(
-                'insert into match values (?,?,?,?,?,?,?,?,?,?)',
-                (gameId, summonerName, win, champion, role, lane,
-                 queue, seasonId, timestamp, gameVersion)
-            )
-            db.commit()
+            match_tuple = (gameId, summonerName, win, champion, role,
+                           lane, queue, seasonId, timestamp, gameVersion)
+
+            with database.engine.connect() as conn:
+                conn.execute(text('insert into match values :match_tuple'), 
+                        match_tuple=match_tuple)
+
 
 def get_db():
     if 'db' not in g:
