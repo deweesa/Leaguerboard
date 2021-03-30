@@ -53,7 +53,7 @@ def clear_summoner():
 @with_appcontext
 def clear_match():
     with database.engine.connect() as conn:
-        conn.execute(text('delete * from match'))
+        conn.execute(text('delete from match'))
         conn.execute(text('vacuum'))
 
 
