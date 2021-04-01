@@ -16,10 +16,11 @@
 
 {% block content %}
 <img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
+<img src="{{ url_for('static', filename='img/map/map11.png') }}" style="max-width=50%"/>
     <h3>{{ champ['title'] }} </h3>
     <p> {{ champ['lore'] }} </p>
-    <p> {{ game_count }} </p>
-    <p> {{ win_count }} </p>
+    <p> Total games played: {{ game_count }} </p>
+    <p> Total games played:{{ win_count }} </p>
 
     <table>
         <tr>

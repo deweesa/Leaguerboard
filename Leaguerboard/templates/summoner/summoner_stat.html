@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
 
+{% block style %}
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 15px;
+    }
+{% endblock %}
+
 {% block header %}
     <h1>{% block title %}{{ summoner }}'s Stats{% endblock %}</h1>
 {% endblock %}
@@ -8,4 +19,17 @@
 <p>Win Percentage: {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
 <p>Games Won: {{ win_count }}</p>
 <p>Games Played: {{ game_count }} </p>
+
+<table>
+    <tr>
+        <th>Played</th>
+        <th>Won</th>
+        <th>Win %</th>
+    </tr>
+    <tr>
+        <td>{{ game_count }}</td>
+        <td>{{ win_count }}</td>
+        <td>{{ "%.2f%%" % (100.0 * win_count/game_count) }}</td>
+    </tr>
+</table>
 {% endblock %}
