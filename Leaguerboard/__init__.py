@@ -18,7 +18,7 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         #DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')#.replace("://", "ql://", 1),
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').replace("://", "ql://", 1),
     )
 
     database.init_app(app)

@@ -8,17 +8,73 @@
     th, td {
         padding: 15px;
     }
+
+    .map_info {
+        position: relative;
+        height: 240px;
+        width: 240px;
+        text-align: center;
+        background-image: url({{ url_for('static', filename='img/map/map11.png') }});
+        background-repeat: no-repeat;
+        background-size: contain;
+        color: #FFFFFF;
+        margin-right: 30%;
+        margin-left: 4%;
+    }
+
+    .TOP {
+        position: absolute;
+        top: 24px;
+        left: 22px;
+    }
+
+    .MIDDLE {
+        position: absolute;
+        top: 45%;
+        width: 100%;
+    }
+
+    .JUNGLE {
+        position: absolute;
+        top: 25%;
+        width: 55%;
+    }
+
+    .sup {
+        position: absolute;
+    }
+
+    .BOTTOM {
+        position: absolute;
+        bottom: 24px;
+        right: 22px;
+    }
+
+    .lore {
+        width: 50%;
+    }
+
+
 {% endblock %}
 
-{% block header %}
-    <h1>{% block title %}{{ champ['name'] }}{% endblock %}</h1>
-{% endblock %}
+{% block title %}{{ champ['name'] }}{% endblock %}
 
 {% block content %}
-<img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
-<img src="{{ url_for('static', filename='img/map/map11.png') }}" style="max-width=50%"/>
-    <h3>{{ champ['title'] }} </h3>
-    <p> {{ champ['lore'] }} </p>
+    <div class="lore">
+        <h1>{{ champ['name'] }}</h1>
+        <p>{{ role_count }}</p>
+        <p>{{ lane_count }}</p>
+        <img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
+        <h3>{{ champ['title'] }} </h3>
+        <p> {{ champ['lore'] }} </p>
+    </div>
+    <div class="map_info">
+        <!--<img src="{{ url_for('static', filename='img/map/map11.png') }}" style="max-width=50%"/>-->
+        {% for lane in lane_count.keys() %}
+            <div class={{ lane }}>{{ "%.0f%%" % (100.0*lane_count[lane]/lane_count.values()|sum()) }}</div>
+        {% endfor %}
+    </div>
+
     <p> Total games played: {{ game_count }} </p>
     <p> Total games played:{{ win_count }} </p>
 
@@ -42,4 +98,5 @@
         </tr>
         {% endfor %}
     </table>
-{% endblock %}
+
+    {% endblock %}

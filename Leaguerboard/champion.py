@@ -51,8 +51,41 @@ def champion(champ):
             player_stats.append(stat_line)
             
     player_stats.sort(reverse=True, key=lambda stat_line: stat_line['game_count'])
-    return render_template('champion/champion.html', champ = champ_dict, game_count = game_count, win_count = win_count, player_stats = player_stats)
+    
+    role_count = get_role_count(key)
+    lane_count = get_lane_count(key)
 
+    return render_template('champion/champion.html', champ = champ_dict, game_count = game_count, win_count = win_count, player_stats = player_stats, role_count=role_count, lane_count=lane_count)
+
+
+def get_role_count(champ_key):
+    with database.engine.connect() as conn:
+        roles = conn.execute(text('select distinct(role) from match where champion = :champ_key'), champ_key=champ_key).fetchall()
+        
+        role_stmt = text('select count(1) from match where champion = :champ_key and role = :role')
+        
+        role_count = {}
+        
+        for role in roles:
+            role_count[role[0]] = conn.execute(role_stmt, champ_key=champ_key, role=role[0]).fetchone()[0]
+
+        return role_count
+        
+def get_lane_count(champ_key):
+    with database.engine.connect() as conn:
+        lanes = conn.execute(text('select distinct(lane) from match where champion = :champ_key'), champ_key=champ_key).fetchall()
+
+        lane_stmt = text('select count(1) from match where champion = :champ_key and lane = :lane')
+        
+        lane_count = {}
+
+        for lane in lanes:
+            lane_count[lane[0]] = conn.execute(lane_stmt, champ_key=champ_key, lane=lane[0]).fetchone()[0]
+
+        if 'NONE' in lane_count:
+            del lane_count['NONE']
+
+        return lane_count
 
 '''def champ_winrate(champ_dict):
     db = get_db()
