@@ -20,6 +20,7 @@ def init_app(app):
     app.cli.add_command(pop_db_command)
     app.cli.add_command(clear_summoner)
     app.cli.add_command(clear_match)
+    app.cli.add_command(update_match)
 
 def init_db():
     db = get_db()
@@ -101,32 +102,60 @@ def populate_match():
             response = get_matchlist(summoner['accountid'], beginIndex)
 
 
+@click.command('update_match')
+@with_appcontext
 def update_match():
-    db = get_db()
+    with database.engine.begin() as conn:
+        summoners = conn.execute(text('select * from summoner')).fetchall()
 
-    summoners = db.execute('select * from summoner').fetchall()
+    most_recent_games = []
 
     for summoner in summoners:
-        most_recent_in_db = db.execute('select max(gameId) from match where summonerName = ?', summoner['summonerName']).fetchone()[0]
-    #HEY YO, when you come back to this, get the most recent of all player's that we're tracking, then use that list when updataing the match
+        with database.engine.begin() as conn:
+            most_recent_in_db = conn.execute(text('select max(gameid) from match where summonername = :sum_name'), sum_name=summoner['summonername']).fetchone()[0]
+        
+        pair = {}
+        pair['accountid'] = summoner['accountid']
+        pair['gameid'] = most_recent_in_db
+        most_recent_games.append(pair)        
 
+    beginIndex = 0
+    for game_account_pair in most_recent_games:
+        response = get_matchlist(game_account_pair['accountid'])
+        
+        #the first game from this is older than the most recent game in the db, so 
+        #go to next game/account pair
+        print(response['matches'])
+        if response['matches'][0]['gameId'] <= game_account_pair['gameid']:
+            beginIndex = 0
+            continue
+
+        insert_match_details(response['matches'])
+        beginIndex += 100
+
+        
 def insert_match_details(matchlist):
     for match in matchlist:
-        print(match['gameId'])
 
         with database.engine.begin() as conn:
             row = conn.execute(text('select 1 from match where gameid = :game_id'), 
                     game_id=match['gameId'])
             
-        if(row.fetchone()):
+        existence = row.fetchone()  
+
+        if existence:
+            print('skipping, game already in')
             continue
 
         if(match['queue'] == 0 or match['queue'] >= 2000):
             continue
 
+
         response = get_match_details(match['gameId'])
         if(response is None):
             continue
+
+        print(match['gameId'])
         
         summoners = {}
         team_win = {}
@@ -138,12 +167,13 @@ def insert_match_details(matchlist):
             input("Press any key to continue")
 
         for participant in participant_ids:
-           with database.engine.begin() as conn:
+            with database.engine.begin() as conn:
                 row = conn.execute(text('select 1 from summoner where summonername = :sum_name'),
                         sum_name=participant['player']['summonerName'])
 
-        if(row.fetchone()):
-            summoners[participant['participantId']] = participant['player']['summonerName']
+            if(row.fetchone()):
+                print('are summoners being added')
+                summoners[participant['participantId']] = participant['player']['summonerName']
 
         teams = response['teams']
 
@@ -176,6 +206,7 @@ def insert_match_details(matchlist):
                            lane, queue, seasonId, timestamp, gameVersion)
 
             with database.engine.begin() as conn:
+                print('this is the insert ' +str(gameId))
                 conn.execute(text('insert into match values :match_tuple'), 
                         match_tuple=match_tuple)
 
