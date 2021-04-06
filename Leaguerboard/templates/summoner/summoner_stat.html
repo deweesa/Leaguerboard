@@ -32,4 +32,32 @@
         <td>{{ "%.2f%%" % (100.0 * win_count/game_count) }}</td>
     </tr>
 </table>
+<br>
+<table>
+    <tr>
+        <th>Result</th>
+        <th>Champion</th>
+        <th>K/D/A</th>
+        <th>Role</th>
+        <th>Lane</th>
+        <th>Queue</th>
+        <th>Time</th>
+    </tr>
+    {% for match in matches %}
+        <tr>
+            {% if match[2] %}
+                <td>Victory</td>
+            {% else %}
+                <td>Defeat</td>
+            {% endif %}
+
+            <td><a href="{{ url_for('champions.champion', champ=champ_names[match[3]|string]) }}">{{ champ_names[match[3]|string] }}</a></td>
+            <td>__K/D/A</td>
+            <td>{{ match[4] }}</td>
+            <td>{{ match[5] }}</td>
+            <td>{{ match[6] }}</td>
+            <td>{{ match[8] }}</td>
+        </tr>
+    {% endfor %}
+</table>
 {% endblock %}
