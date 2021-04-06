@@ -7,6 +7,7 @@
     }
     th, td {
         padding: 15px;
+        text-align: center;
     }
 
     .map_info {
@@ -87,13 +88,13 @@
         </tr>
         {% for stat_line in player_stats %}
         <tr>
-            <td style="text-align:center">{{ stat_line['summonername'] }}</td>
-            <td style="text-align:center">{{ stat_line['game_count'] }}</td>
-            <td style="text-align:center">{{ stat_line['win_count'] }}</td>
+            <td ><a href="{{ url_for('summoner.summoner_stats', summoner=stat_line['summonername']) }}">{{ stat_line['summonername'] }}</a></td>
+            <td >{{ stat_line['game_count'] }}</td>
+            <td >{{ stat_line['win_count'] }}</td>
             {% if stat_line['game_count'] == 0 %}
-            <td style="text-align:center">-</td>
+            <td >-</td>
             {% else %}
-            <td style="text-align:center">{{"%.2f%%" % (100.0 * stat_line['win_count']/stat_line['game_count']) }}</td>
+            <td >{{"%.2f%%" % (100.0 * stat_line['win_count']/stat_line['game_count']) }}</td>
             {% endif %}
         </tr>
         {% endfor %}
