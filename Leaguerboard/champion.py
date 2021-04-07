@@ -55,7 +55,12 @@ def champion(champ):
     role_count = get_role_count(key)
     lane_count = get_lane_count(key)
 
-    return render_template('champion/champion.html', champ = champ_dict, game_count = game_count, win_count = win_count, player_stats = player_stats, role_count=role_count, lane_count=lane_count)
+    with database.engine.connect() as conn:
+        match_history = conn.execute(text('select win, summonername, role, lane, queue, timestamp from match where champion=:champ'), champ=key).fetchall()
+
+    match_history.sort(reverse=True, key=lambda match: match[5])
+
+    return render_template('champion/champion.html', champ=champ_dict, game_count=game_count, win_count=win_count, player_stats=player_stats, role_count=role_count, lane_count=lane_count, match_history=match_history)
 
 
 def get_role_count(champ_key):
@@ -70,6 +75,7 @@ def get_role_count(champ_key):
             role_count[role[0]] = conn.execute(role_stmt, champ_key=champ_key, role=role[0]).fetchone()[0]
 
         return role_count
+
         
 def get_lane_count(champ_key):
     with database.engine.connect() as conn:
@@ -86,19 +92,3 @@ def get_lane_count(champ_key):
             del lane_count['NONE']
 
         return lane_count
-
-'''def champ_winrate(champ_dict):
-    db = get_db()
-    key = champ_dict['key']
-
-    #game_count = db.execute('select count(*) from match where champion = ?', (key,)).fetchone()[0]
-    with database.engine.conect() as conn:
-        game_count = db.execute(text('select count(1) from match where champion = :champ'), champ=key)
-
-    if game_count == 0:
-        return 0
-
-    win_count = db.execute('select count(*) from match where champion = ? and win = 1', (key,)).fetchone()[0]
-
-    return 100.0 * win_count / game_count
-'''
