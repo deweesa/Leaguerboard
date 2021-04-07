@@ -30,5 +30,3 @@ def summoner_stats(summoner):
     matches = sorted(matches, key = lambda x:x[8], reverse=True)
 
     return render_template('summoner/summoner_stat.html', summoner=summoner, win_count=win_count, game_count=game_count, matches=matches, champ_names=champ_names)
-
-

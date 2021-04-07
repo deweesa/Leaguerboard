@@ -77,7 +77,7 @@
     </div>
 
     <p> Total games played: {{ game_count }} </p>
-    <p> Total games played:{{ win_count }} </p>
+    <p> Total games won:{{ win_count }} </p>
 
     <table>
         <tr>
@@ -99,5 +99,34 @@
         </tr>
         {% endfor %}
     </table>
+    <br>
+    <table>
+        <tr>
+            <th>Result</th>
+            <th>Summoner</th>
+            <th>K/D/A</th>
+            <th>Role</th>
+            <th>Lane</th>
+            <th>Queue</th>
+            <th>Date</th>
+        </tr>
+        {% for match in match_history %}
+            <tr>
+                <td>{{ match[0] }}</td>
+                <td>{{ match[1] }}</td>
+                <td>__K/D/A</td>
+                <td>{{ match[2] }}</td>
+                <td>{{ match[3] }}</td>
+                <td>{{ match[4] }}</td>
+                <td><script>
+                        var milisecs = {{ match[5] }} 
+                        var local_time = new Date(milisecs)
+                        document.write(local_time.toLocaleString())
+                    </script>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
 
     {% endblock %}

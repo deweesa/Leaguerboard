@@ -56,7 +56,12 @@
             <td>{{ match[4] }}</td>
             <td>{{ match[5] }}</td>
             <td>{{ match[6] }}</td>
-            <td>{{ match[8] }}</td>
+            <td><script>
+                    var milisecs = {{ match[8] }}
+                    var local_time = new Date(milisecs)
+                    document.write(local_time.toLocaleString())
+                </script>
+            </td> 
         </tr>
     {% endfor %}
 </table>
