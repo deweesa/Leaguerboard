@@ -9,6 +9,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
 from . import database
+from Leaguerboard.models import Summoner
 from sqlalchemy import text
 
 API_KEY = os.getenv('SECRET_KEY')
@@ -32,8 +33,10 @@ def init_db():
 @click.command('init-db')
 @with_appcontext
 def init_db_command():
-    init_db()
+    
+    
     click.echo('Initialized the database.')
+
 
 
 @click.command('pop-db')
@@ -58,35 +61,36 @@ def clear_match():
 
 
 def populate_db():
-    with database.engine.begin() as conn:
-        gamers = conn.execute(text('select * from gamers')).fetchall()
+    #with database.engine.begin() as conn:
+    #    gamers = conn.execute(text('select * from gamers')).fetchall()
 
-    populate_summoner(gamers)
+    populate_summoner()
     click.echo('Summoner table populated.')
 
     populate_match()
     click.echo('Match table populated.')
 
 
-def populate_summoner(gamers):
-    for row in gamers:
-        print(row['summonername'])
-        with database.engine.begin() as conn:
-            exists_check = conn.execute(text('select 1 from summoner where summonername = :sum_name'), sum_name=row['summonername'])
+def populate_summoner():
+    primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 'FocusK',
+            'ForeseenBison', 'Moisturiser', 'Pasttugboar', 'stumblzzz', 'JasaD15']
+    for summoner in primary_summoners:
+        exists = Summoner.query.filter_by(name=summoner).first()
 
-            if(exists_check.fetchone() is not None):
-                continue
-            print('where am i')
+        if exists: continue
 
-            response = get_summoner_info(row['summonername'])
-            if(response is None): continue
-            print('who am i')
-            response_tuple = (response['accountId'], response['profileIconId'], response['revisionDate'], response['name'], response['id'], response['puuid'], response['summonerLevel'])
-            print(response_tuple)
-            conn.execute(text('insert into summoner values :response'), response=response_tuple)
+        response = get_summoner_info(summoner)
+        
+        if response is None: continue
 
+        new_summoner = Summoner(response, True)
 
+        database.session.add(new_summoner)
+        database.session.commit()
+
+    
 def populate_match():
+    Summoner.query.filter_by(is_primary=True).all()
     with database.engine.begin() as conn:
         summoners = conn.execute(text('select summonername, accountid from summoner')).fetchall()
 
