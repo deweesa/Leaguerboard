@@ -9,7 +9,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
 from . import database
-from Leaguerboard.models import Summoner
+from Leaguerboard.models import Summoner, Match, MatchStat
 from sqlalchemy import text
 
 API_KEY = os.getenv('SECRET_KEY')
@@ -72,8 +72,9 @@ def populate_db():
 
 
 def populate_summoner():
-    primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 'FocusK',
-            'ForeseenBison', 'Moisturiser', 'Pasttugboar', 'stumblzzz', 'JasaD15']
+    #primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 'FocusK',
+    #        'ForeseenBison', 'Moisturiser', 'Pasttugboar', 'stumblzzz', 'JasaD15']
+    primary_summoners = ['JasaD15']
     for summoner in primary_summoners:
         exists = Summoner.query.filter_by(name=summoner).first()
 
@@ -90,20 +91,30 @@ def populate_summoner():
 
     
 def populate_match():
-    Summoner.query.filter_by(is_primary=True).all()
-    with database.engine.begin() as conn:
-        summoners = conn.execute(text('select summonername, accountid from summoner')).fetchall()
-
+    summoners = Summoner.query.filter_by(is_primary=True).all()
     for summoner in summoners:
-        print(summoner['summonername'])
-        response = get_matchlist(summoner['accountid'])
-        beginIndex = 0
+        response = get_matchlist(summoner.account_id)
+        begin_index = 0
 
         while(response['matches']):
-            insert_match_details(response['matches'])
-            beginIndex += 100
+            insert_matches(response['matches'])     
 
-            response = get_matchlist(summoner['accountid'], beginIndex)
+            begin_index += 100
+            response = get_matchlist(summoner.account_id, begin_index)
+
+    for match in Match.query.all():
+        insert_match_details(match)
+
+
+def insert_matches(matchlist):
+    for match in matchlist:
+        exists = Match.query.filter_by(game_id=match['gameId']).first()
+        if exists: continue
+
+        if match['queue'] == 0 or match['queue'] >= 2000: continue
+        
+        database.session.add(Match(match))
+        database.session.commit()
 
 
 @click.command('update_match')
@@ -138,7 +149,35 @@ def update_match():
         beginIndex += 100
 
         
-def insert_match_details(matchlist):
+def insert_match_details(match):
+    response = get_match_details(match.game_id)
+    
+    if response is None: return
+
+    primary_participants = {}
+
+    participant_ids = response['participantIdentities']
+
+    for participant_id_dto in participant_ids:
+        player_dto = participant_id_dto['player']
+        
+        if Summoner.query.filter_by(account_id=player_dto['accountId'], is_primary=True).first():
+            p_id = participant_id_dto['participantId']
+            primary_participants[p_id] = player_dto['accountId']
+    
+    participants = response['participants']
+    for participant_dto in participants:
+        p_id = participant_dto['participantId']
+        if p_id not in primary_participants.keys(): continue
+
+        account_id = primary_participants[p_id]
+        match_stats = MatchStat(match.game_id, account_id, participant_dto['stats'], 
+                participant_dto['championId'], participant_dto['timeline'])
+
+        database.session.add(match_stats)
+        database.session.commit()
+     
+    ''' 
     for match in matchlist:
 
         with database.engine.begin() as conn:
@@ -213,6 +252,7 @@ def insert_match_details(matchlist):
                 print('this is the insert ' +str(gameId))
                 conn.execute(text('insert into match values :match_tuple'), 
                         match_tuple=match_tuple)
+        '''
 
 
 def get_db():
