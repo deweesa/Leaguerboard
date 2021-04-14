@@ -9,6 +9,7 @@ the database.
     flask init-db
     flask pop-db
     flask clear-sum
+
 """
 import sqlite3
 import time
@@ -24,31 +25,17 @@ from . import database
 from Leaguerboard.models import Summoner, Match, MatchStat
 from sqlalchemy import text
 
+
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
 
+
 def init_app(app):
-    app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
     app.cli.add_command(pop_db_command)
     app.cli.add_command(clear_summoner)
     app.cli.add_command(clear_match)
     app.cli.add_command(update_match)
-
-def init_db():
-    db = get_db()
-
-    with current_app.open_resource('schema.sql') as f:
-        db.executescript(f.read().decode('utf8'))
-
-
-@click.command('init-db')
-@with_appcontext
-def init_db_command():
-    
-    
-    click.echo('Initialized the database.')
-
 
 
 @click.command('pop-db')
@@ -84,9 +71,20 @@ def populate_db():
 
 
 def populate_summoner():
-    primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 'FocusK',
-                         'ForeseenBison', 'Moisturiser', 'Pasttugboar', 'stumblzzz', 'JasaD15']
-    #primary_summoners = ['JasaD15']
+    """Inserts rows into the summoners table.
+
+    Retrieves account information for the summoners based on the SummonerName
+    and inserts that data into the summoners table. 
+    """
+    
+    
+    # List of summoners who's stats are being tracked for this web app. 
+    primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 
+                         'FocusK', 'ForeseenBison', 'Moisturiser', 
+                         'Pasttugboat', 'stumblzzz', 'JasaD15']
+
+    # Iterate over the list of summoners and insert their account info into 
+    # the summoner table.
     for summoner in primary_summoners:
         exists = Summoner.query.filter_by(name=summoner).first()
 
@@ -103,10 +101,23 @@ def populate_summoner():
 
     
 def populate_match():
+    """Gets match history for each summoner
+
+    Iterate through all the primary summoners from the summoner table and get
+    a cumulative match history for the group.
+    """
+    
+    # Get all the primary summoners from the summoner table, and iterate over 
+    # them. For each summoner get their entire match history.
     summoners = Summoner.query.filter_by(is_primary=True).all()
+
     for summoner in summoners:
         response = get_matchlist(summoner.account_id)
         begin_index = 0
+
+        # If the begin_index is greater than the number of matches the API
+        # remembers (Matches over 2 years old are not accessible by API) then
+        # the response['matches'] is an empty list
 
         while(response['matches']):
             insert_matches(response['matches'])     
@@ -114,11 +125,24 @@ def populate_match():
             begin_index += 100
             response = get_matchlist(summoner.account_id, begin_index)
 
+    # For all the matches in the match table, get match details
     for match in Match.query.all():
         insert_match_details(match)
 
 
 def insert_matches(matchlist):
+    """Insert matches into match table
+
+    Iterate of the matchlist and insert it's details into the match table.
+    Before inserting the match we check if it's already refrenced in the table
+    and that it's not a private game or tutorial game. 
+
+    Args:
+        matchlist:
+            List of (0, 100] matches that a summoner has participated in.
+    """
+
+    
     for match in matchlist:
         exists = Match.query.filter_by(game_id=match['gameId']).first()
         if exists: continue
