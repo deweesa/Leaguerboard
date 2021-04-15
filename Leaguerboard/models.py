@@ -23,6 +23,9 @@ class Summoner(db.Model):
         self.puuid = response['puuid']
         self.is_primary = is_primary
 
+    def __str__(self):
+        return '[' + self.name + '|' + self.sumoner_level + ']'
+
 class Match(db.Model):
     game_id = db.Column(db.BigInteger, primary_key=True)
     queue = db.Column(db.Integer)
