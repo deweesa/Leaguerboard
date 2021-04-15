@@ -1,3 +1,9 @@
+"""This is the entry point for the Leaguerboard web app.
+
+This is a project to learn more about Flask, Python, HTML, CSS, Heroku, etc.
+The aim of this webapp is to be a op.gg/mobafire clone for use in a small 
+discord group. Currently their is a rough prototype up on leagueboard.heroku.com
+"""
 import os
 
 from flask import (Flask, render_template)
@@ -17,8 +23,12 @@ def create_app(test_config=None):
 
     app.config.from_mapping(
         SECRET_KEY='dev',
+        #the below line is legacy from when sqlite3 was used to store data.
         #DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
+
+        # FIXME: Need to have this configure dynamically depending on running
+        # environment. 
         SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')#.replace("://", "ql://", 1),
     )
 
