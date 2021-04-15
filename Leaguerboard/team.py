@@ -1,6 +1,7 @@
 from flask import (Blueprint, render_template, request, flash, redirect, url_for)
 #from Leaguerboard.db import get_db
-from sqlalchemy import select
+from sqlalchemy import (select, join)
+from sqlalchemy.orm import aliased
 from . import database
 from Leaguerboard.models import (Summoner, MatchStat, Match)
 
@@ -21,7 +22,7 @@ def team():
             return "Invalid team: Please check more than one player"
         
         team_statistics = get_team_stats(team_selection)
-        return str(team_statistics)
+        return str(type(team_statistics))
         #return render_template('team/team_stats.html', game_count=game_count, win_count=win_count, team_selection=team_selection)
 
     # Get all the primary summoners and display them for team selection
@@ -46,12 +47,17 @@ def get_team_stats(team_selection):
 
     # Select all the game_ids where players in team_selection participated. 
     # Other primary summoner's could be part of these games at this point.
-    s = select(MatchStat.game_id).\
-            where(MatchStat.account_id.in_(team_selection)).distinct()
-    
-    with database.engine.begin() as conn:
-        games = conn.execute(s).fetchall()
+    #s = select(MatchStat.game_id).\
+    #        where(MatchStat.account_id.in_(team_selection)).distinct()
 
+    match_stat_1 = aliased(MatchStat)
+    match_stat_2 = aliased(MatchStat)
+    
+    games = MatchStat.join(match_stat_1, game_id = match_stat_1.game_id).all()
+    
+    return games
+
+"""
     games = [x[0] for x in games]
     
     for game_id in games:
@@ -62,3 +68,4 @@ def get_team_stats(team_selection):
                 break
    
     return games
+"""

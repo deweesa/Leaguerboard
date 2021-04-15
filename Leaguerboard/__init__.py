@@ -15,12 +15,7 @@ database = SQLAlchemy()
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
-    db_user = str(os.getenv('DB_USER'))
-    db_password = str( os.getenv('DB_PASSWORD'))
-    db_host = str(os.getenv('DB_HOST'))
-    db_port = str(os.getenv('DB_PORT'))
-    db_name = str(os.getenv('DB_NAME'))
-
+    
     app.config.from_mapping(
         SECRET_KEY='dev',
         #the below line is legacy from when sqlite3 was used to store data.
