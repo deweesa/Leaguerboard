@@ -31,7 +31,7 @@ PARAMS = {'api_key': API_KEY}
 
 
 def init_app(app):
-    app.cli.add_command(init_db_command)
+#    app.cli.add_command(init_db_command)
     app.cli.add_command(pop_db_command)
     app.cli.add_command(clear_summoner)
     app.cli.add_command(clear_match)

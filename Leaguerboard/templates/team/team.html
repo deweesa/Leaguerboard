@@ -9,8 +9,8 @@
     
     <form method="post">
         {% for summoner in summoners %}
-        <input type="checkbox" id="summoner{{ loop.index }}" name= "summoner" value="{{ summoner['summonername'] }}">
-        <label for="summoner{{ loop.index }}"> {{ summoner['summonername'] }}</label><br>
+        <input type="checkbox" id="summoner{{ loop.index }}" name="summoner" value="{{ summoner.name }}">
+        <label for="summoner{{ loop.index }}"> {{ summoner.name }}</label><br>
         {% endfor %}
         <br>
         <input type="submit" value="Submit">
