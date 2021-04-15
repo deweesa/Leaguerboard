@@ -22,7 +22,7 @@ def team():
             return "Invalid team: Please check more than one player"
         
         team_statistics = get_team_stats(team_selection)
-        return str(type(team_statistics))
+        return str(team_statistics)
         #return render_template('team/team_stats.html', game_count=game_count, win_count=win_count, team_selection=team_selection)
 
     # Get all the primary summoners and display them for team selection
@@ -50,12 +50,16 @@ def get_team_stats(team_selection):
     #s = select(MatchStat.game_id).\
     #        where(MatchStat.account_id.in_(team_selection)).distinct()
 
-    match_stat_1 = aliased(MatchStat)
-    match_stat_2 = aliased(MatchStat)
-    
-    games = MatchStat.join(match_stat_1, game_id = match_stat_1.game_id).all()
-    
+    #games = MatchStat.query.filter_by(account_id=team_selection[0])
+    s = select(MatchStat.game_id).where(MatchStat.account_id==team_selection[0])
+
+    with database.engine.begin() as conn:
+       games = conn.execute(s)
+
+    games = [x[0] for x in games]
+
     return games
+    
 
 """
     games = [x[0] for x in games]
