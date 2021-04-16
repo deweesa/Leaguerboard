@@ -1,6 +1,6 @@
 from flask import (Blueprint, render_template, request, flash, redirect, url_for)
 #from Leaguerboard.db import get_db
-from sqlalchemy import (select, join)
+from sqlalchemy import (select, join, and_)
 from sqlalchemy.orm import aliased
 from . import database
 from Leaguerboard.models import (Summoner, MatchStat, Match)
@@ -51,14 +51,41 @@ def get_team_stats(team_selection):
     #        where(MatchStat.account_id.in_(team_selection)).distinct()
 
     #games = MatchStat.query.filter_by(account_id=team_selection[0])
+
     s = select(MatchStat.game_id).where(MatchStat.account_id==team_selection[0])
 
     with database.engine.begin() as conn:
        games = conn.execute(s)
 
-    games = [x[0] for x in games]
+    all_games = [x[0] for x in games]
+    game_count = 0
 
-    return games
+    for game_id in all_games:
+        s = select(MatchStat.game_id, MatchStat.account_id) \
+                .where(
+                     and_(MatchStat.account_id!=team_selection[0],
+                          MatchStat.game_id==game_id,
+                          MatchStat.account_id.in_(team_selection[1:])
+                         )
+                      )
+                  
+
+        with database.engine.begin() as conn:
+            participants = conn.execute(s).fetchall()
+        
+        if not participants:
+            #Other members of the team aren't in the game
+            all_games.remove(game_id)
+            continue 
+        else:
+            game_count += 1
+        
+        print(participants)
+        print(len(participants))
+        
+    print(game_count)
+
+    return all_games
     
 
 """
