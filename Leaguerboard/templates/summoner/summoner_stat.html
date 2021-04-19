@@ -45,23 +45,24 @@
     </tr>
     {% for match in matches %}
         <tr>
-            {% if match[2] %}
+            {% if match.win %}
                 <td>Victory</td>
             {% else %}
                 <td>Defeat</td>
             {% endif %}
 
-            <td><a href="{{ url_for('champions.champion', champ=champ_names[match[3]|string]) }}">{{ champ_names[match[3]|string] }}</a></td>
-            <td>__K/D/A</td>
-            <td>{{ match[4] }}</td>
-            <td>{{ match[5] }}</td>
-            <td>{{ match[6] }}</td>
-            <td><script>
+            <td><a href="{{ url_for('champions.champion', champ=champ_names[match.champ|string]) }}">{{ champ_names[match.champ|string] }}</a></td>
+            <td>{{ match.kills }}/{{ match.deaths }}/{{ match.assists }}</td>
+            <td>{{ match.role }}</td>
+            <td>{{ match.lane }}</td>
+            <td>__queue</td>
+            <!---<td><script>
                     var milisecs = {{ match[8] }}
                     var local_time = new Date(milisecs)
                     document.write(local_time.toLocaleString())
                 </script>
-            </td> 
+            </td>---> 
+            <td>__time</td>
         </tr>
     {% endfor %}
 </table>
