@@ -9,6 +9,10 @@ bp = Blueprint('summoner', __name__)
 
 @bp.route('/summoners', methods=('GET', 'POST'))
 def summoner():
+    """Get a list of the primary summoners and dispaly them with links to their 
+       stat page
+    """
+
     summoners = Summoner.query.filter_by(is_primary=True).all()
     summoners = [x.name for x in summoners]
 
@@ -16,12 +20,12 @@ def summoner():
 
 @bp.route('/summoner/<string:summoner>')
 def summoner_stats(summoner):
+    """Get the Match history for a summoner and dispaly them, as well 
+       as liftime game/win count and calculated win percentage
+    """
     summoner_info = Summoner.query.filter_by(name=summoner).first()
 
-    Session = sessionmaker(bind=database.engine)
-    session = Session()
-
-    match_history = session.query(MatchStat, Match).\
+    match_history = database.session.query(MatchStat, Match).\
             join(Match, MatchStat.game_id==Match.game_id).\
             filter(MatchStat.account_id==summoner_info.account_id).\
             all()
