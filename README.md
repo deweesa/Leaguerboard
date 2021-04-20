@@ -27,3 +27,14 @@ Then use
     
 to start the development server where you can access the site in your 
 browser.
+
+Managing the Database on Heroku
+-------------------------------
+
+If you're making major changes to the database hosted by Heroku, do not run 
+processess that take a long time to complete (`$ flask populate_db` for example).
+Make these changes locally then follow this guide on our [Wiki](https://github.com/deweesa/Leaguerboard/wiki/Uploading-Database-Backup-to-Heroku) 
+or this guide on [Heroku's devcenter](https://devcenter.heroku.com/articles/heroku-postgres-import-export)
+to push the database up to Heroku. And after doing this, geniunely, get up and walk away from the computer. 
+It takes a while for the changes to go live, so do yourself a favor and don't keep refreshing the site
+thinking "why is this broken".
