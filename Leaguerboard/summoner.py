@@ -22,7 +22,7 @@ def summoner_stats(summoner):
     session = Session()
 
     match_history = session.query(MatchStat, Match).\
-            join(Match, MatchStat.game_id==Match.game_id, full=True).\
+            join(Match, MatchStat.game_id==Match.game_id).\
             filter(MatchStat.account_id==summoner_info.account_id).\
             all()
 

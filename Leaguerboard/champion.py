@@ -26,6 +26,13 @@ def champion(champ):
     champ_dict = champ_full[champ]
     key = champ_dict['key']
 
+    Session = sessionmaker(bind=database.engine)
+    session = Session()
+
+    match_history = session.query(MatchStat, Match, Summoner).\
+            join(Match, MatchStat.game_id==Match.game_id).all()
+
+    """ 
     with database.engine.begin() as conn:
         game_count = conn.execute(text('select count (1) from match where champion = :champ'), champ=key).fetchone()[0]
         win_count = conn.execute(text('select count (1) from match where champion = :champ and win = true'), champ=key).fetchone()[0]
@@ -49,6 +56,7 @@ def champion(champ):
                                                    champ=key, sum_name=player['summonername']).fetchone()[0]
 
             player_stats.append(stat_line)
+    """
             
     player_stats.sort(reverse=True, key=lambda stat_line: stat_line['game_count'])
     

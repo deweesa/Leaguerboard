@@ -21,9 +21,10 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
-from . import database
+from . import database as db
 from Leaguerboard.models import Summoner, Match, MatchStat
 from sqlalchemy import text
+from sqlalchemy.sql import func
 
 
 API_KEY = os.getenv('SECRET_KEY')
@@ -48,14 +49,14 @@ def pop_db_command():
 @click.command('clear-sum')
 @with_appcontext
 def clear_summoner():
-    with database.engine.begin() as conn:
+    with db.engine.begin() as conn:
         conn.execute(text('delete from summoner'))
 
 
 @click.command('clear-match')
 @with_appcontext
 def clear_match():
-    with database.engine.begin() as conn:
+    with db.engine.begin() as conn:
         conn.execute(text('delete from match'))
 
 
@@ -96,8 +97,8 @@ def populate_summoner():
 
         new_summoner = Summoner(response, True)
 
-        database.session.add(new_summoner)
-        database.session.commit()
+        db.session.add(new_summoner)
+        db.session.commit()
 
     
 def populate_match():
@@ -126,8 +127,8 @@ def populate_match():
             response = get_matchlist(summoner.account_id, begin_index)
 
     # For all the matches in the match table, get match details
-    for match in Match.query.all():
-        insert_match_details(match)
+    #for match in Match.query.all():
+    #    insert_match_details(match)
 
 
 def insert_matches(matchlist):
@@ -149,40 +150,41 @@ def insert_matches(matchlist):
 
         if match['queue'] == 0 or match['queue'] >= 2000: continue
         
-        database.session.add(Match(match))
-        database.session.commit()
+        db.session.add(Match(match))
+        db.session.commit()
+
+        match_details = get_match_details(match['gameId'])
+        insert_match_details(match_details)
 
 
 @click.command('update_match')
 @with_appcontext
 def update_match():
-    with database.engine.begin() as conn:
-        summoners = conn.execute(text('select * from summoner')).fetchall()
+    #with database.engine.begin() as conn:
+    #    summoners = conn.execute(text('select * from summoner')).fetchall()
+    sum_info = Summoner.query.all()
+    most_recent_games = []
+
+    sum_ids = db.session.query(Summoner.account_id).\
+            filter_by(is_primary=True).all()
+    sum_ids = [x[0] for x in sum_ids]
 
     most_recent_games = []
 
-    for summoner in summoners:
-        with database.engine.begin() as conn:
-            most_recent_in_db = conn.execute(text('select max(gameid) from match where summonername = :sum_name'), sum_name=summoner['summonername']).fetchone()[0]
-        
-        pair = {}
-        pair['accountid'] = summoner['accountid']
-        pair['gameid'] = most_recent_in_db
-        most_recent_games.append(pair)        
+    with db.session() as session:
+        for sum_id in sum_ids:
+            res = session.query(func.max(MatchStat.game_id)).\
+                    filter(MatchStat.account_id==sum_id).one()
+            most_recent_games.append((res[0], sum_id))
 
-    beginIndex = 0
-    for game_account_pair in most_recent_games:
-        response = get_matchlist(game_account_pair['accountid'])
-        
-        #the first game from this is older than the most recent game in the db, so 
-        #go to next game/account pair
-        print(response['matches'])
-        if response['matches'][0]['gameId'] <= game_account_pair['gameid']:
-            beginIndex = 0
-            continue
+    for recent_game in most_recent_games:
+        response = get_matchlist(recent_game[1])
+        begin_index = 0
 
-        insert_match_details(response['matches'])
-        beginIndex += 100
+        while(response['matches'] and \
+              response['matches'][-1]['gameId'] > recent_game[0]):
+            insert_matches(response['matches'])
+            begin_index += 100
 
         
 def insert_match_details(match):
@@ -242,5 +244,5 @@ def insert_match_details(match):
                                 participant_dto['championId'],
                                 participant_dto['timeline'])
 
-        database.session.add(match_stats)
-        database.session.commit()
+        db.session.add(match_stats)
+        db.session.commit()
