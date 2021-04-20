@@ -1,28 +1,37 @@
+"""This is the entry point for the Leaguerboard web app.
+
+This is a project to learn more about Flask, Python, HTML, CSS, Heroku, etc.
+The aim of this webapp is to be a op.gg/mobafire clone for use in a small 
+discord group. Currently their is a rough prototype up on leagueboard.heroku.com
+"""
 import os
 
 from flask import (Flask, render_template)
 from flask_sqlalchemy import SQLAlchemy
+
 
 database = SQLAlchemy()
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
-    db_user = str(os.getenv('DB_USER'))
-    db_password = str( os.getenv('DB_PASSWORD'))
-    db_host = str(os.getenv('DB_HOST'))
-    db_port = str(os.getenv('DB_PORT'))
-    db_name = str(os.getenv('DB_NAME'))
-
+    
     app.config.from_mapping(
         SECRET_KEY='dev',
+        #the below line is legacy from when sqlite3 was used to store data.
         #DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').replace("://", "ql://", 1),
+
+        # FIXME: Need to have this configure dynamically depending on running
+        # environment. 
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')#.replace("://", "ql://", 1),
     )
 
+    from . import models
+
     database.init_app(app)
-    
+    with app.app_context():
+        database.create_all()
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)

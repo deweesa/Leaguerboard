@@ -14,7 +14,7 @@
     <p>Games Played: {{ game_count }}</p>
     <br>
     <ul>
-        {% for teammate in team_selection %}
+        {% for teammate in team_names %}
         <li><a href ="{{ url_for('summoner.summoner_stats', summoner=teammate) }}">{{ teammate }}</a></li>
         {% endfor %}
     </ul>

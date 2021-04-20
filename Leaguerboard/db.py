@@ -1,3 +1,16 @@
+"""Methods and flask commands used to manage the projects Database. 
+
+This module is used to update and modify the contents of the Leaguerboard
+Database. This includes initializing, filling, updating, and clearing data in
+the database.
+
+    Typical usage example:
+
+    flask init-db
+    flask pop-db
+    flask clear-sum
+
+"""
 import sqlite3
 import time
 import os
@@ -8,32 +21,22 @@ import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 from Leaguerboard.api_wrapper import (get_summoner_info, get_matchlist, get_match_details)
-from . import database
+from . import database as db
+from Leaguerboard.models import Summoner, Match, MatchStat
 from sqlalchemy import text
+from sqlalchemy.sql import func
+
 
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
 
+
 def init_app(app):
-    app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
+#    app.cli.add_command(init_db_command)
     app.cli.add_command(pop_db_command)
     app.cli.add_command(clear_summoner)
     app.cli.add_command(clear_match)
     app.cli.add_command(update_match)
-
-def init_db():
-    db = get_db()
-
-    with current_app.open_resource('schema.sql') as f:
-        db.executescript(f.read().decode('utf8'))
-
-
-@click.command('init-db')
-@with_appcontext
-def init_db_command():
-    init_db()
-    click.echo('Initialized the database.')
 
 
 @click.command('pop-db')
@@ -46,181 +49,204 @@ def pop_db_command():
 @click.command('clear-sum')
 @with_appcontext
 def clear_summoner():
-    with database.engine.begin() as conn:
+    with db.engine.begin() as conn:
         conn.execute(text('delete from summoner'))
 
 
 @click.command('clear-match')
 @with_appcontext
 def clear_match():
-    with database.engine.begin() as conn:
+    with db.engine.begin() as conn:
         conn.execute(text('delete from match'))
 
 
 def populate_db():
-    with database.engine.begin() as conn:
-        gamers = conn.execute(text('select * from gamers')).fetchall()
+    #with database.engine.begin() as conn:
+    #    gamers = conn.execute(text('select * from gamers')).fetchall()
 
-    populate_summoner(gamers)
+    populate_summoner()
     click.echo('Summoner table populated.')
 
     populate_match()
     click.echo('Match table populated.')
 
 
-def populate_summoner(gamers):
-    for row in gamers:
-        print(row['summonername'])
-        with database.engine.begin() as conn:
-            exists_check = conn.execute(text('select 1 from summoner where summonername = :sum_name'), sum_name=row['summonername'])
+def populate_summoner():
+    """Inserts rows into the summoners table.
 
-            if(exists_check.fetchone() is not None):
-                continue
-            print('where am i')
+    Retrieves account information for the summoners based on the SummonerName
+    and inserts that data into the summoners table. 
+    """
+    
+    
+    # List of summoners who's stats are being tracked for this web app. 
+    primary_summoners = ['Amon Byrne', 'BluffMountain', 'BluffMountain72', 
+                         'FocusK', 'ForeseenBison', 'Moisturiser', 
+                         'Pasttugboat', 'stumblzzz', 'JasaD15']
 
-            response = get_summoner_info(row['summonername'])
-            if(response is None): continue
-            print('who am i')
-            response_tuple = (response['accountId'], response['profileIconId'], response['revisionDate'], response['name'], response['id'], response['puuid'], response['summonerLevel'])
-            print(response_tuple)
-            conn.execute(text('insert into summoner values :response'), response=response_tuple)
+    # Iterate over the list of summoners and insert their account info into 
+    # the summoner table.
+    for summoner in primary_summoners:
+        exists = Summoner.query.filter_by(name=summoner).first()
 
+        if exists: continue
 
+        response = get_summoner_info(summoner)
+        
+        if response is None: continue
+
+        new_summoner = Summoner(response, True)
+
+        db.session.add(new_summoner)
+        db.session.commit()
+
+    
 def populate_match():
-    with database.engine.begin() as conn:
-        summoners = conn.execute(text('select summonername, accountid from summoner')).fetchall()
+    """Gets match history for each summoner
+
+    Iterate through all the primary summoners from the summoner table and get
+    a cumulative match history for the group.
+    """
+    
+    # Get all the primary summoners from the summoner table, and iterate over 
+    # them. For each summoner get their entire match history.
+    summoners = Summoner.query.filter_by(is_primary=True).all()
 
     for summoner in summoners:
-        print(summoner['summonername'])
-        response = get_matchlist(summoner['accountid'])
-        beginIndex = 0
+        response = get_matchlist(summoner.account_id)
+        begin_index = 0
+
+        # If the begin_index is greater than the number of matches the API
+        # remembers (Matches over 2 years old are not accessible by API) then
+        # the response['matches'] is an empty list
 
         while(response['matches']):
-            insert_match_details(response['matches'])
-            beginIndex += 100
+            insert_matches(response['matches'])     
 
-            response = get_matchlist(summoner['accountid'], beginIndex)
+            begin_index += 100
+            response = get_matchlist(summoner.account_id, begin_index)
+
+    # For all the matches in the match table, get match details
+    #for match in Match.query.all():
+    #    insert_match_details(match)
+
+
+def insert_matches(matchlist, stoping_match=None):
+    """Insert matches into match table
+
+    Iterate of the matchlist and insert it's details into the match table.
+    Before inserting the match we check if it's already refrenced in the table
+    and that it's not a private game or tutorial game. 
+
+    Args:
+        matchlist:
+            List of (0, 100] matches that a summoner has participated in.
+    """
+
+    
+    for match in matchlist:
+        if stoping_match:
+            if match['gameId'] >= stoping_match:
+                return
+        exists = Match.query.filter_by(game_id=match['gameId']).first()
+        if exists: continue
+
+        print(match['gameId'])
+
+        if match['queue'] == 0 or match['queue'] >= 2000: continue
+        
+        db.session.add(Match(match))
+        db.session.commit()
+
+        match_details = get_match_details(match['gameId'])
+        insert_match_details(match_details)
 
 
 @click.command('update_match')
 @with_appcontext
 def update_match():
-    with database.engine.begin() as conn:
-        summoners = conn.execute(text('select * from summoner')).fetchall()
+    #with database.engine.begin() as conn:
+    #    summoners = conn.execute(text('select * from summoner')).fetchall()
+    sum_info = Summoner.query.all()
+    most_recent_games = []
+
+    sum_ids = db.session.query(Summoner.account_id).\
+            filter_by(is_primary=True).all()
+    sum_ids = [x[0] for x in sum_ids]
 
     most_recent_games = []
 
-    for summoner in summoners:
-        with database.engine.begin() as conn:
-            most_recent_in_db = conn.execute(text('select max(gameid) from match where summonername = :sum_name'), sum_name=summoner['summonername']).fetchone()[0]
-        
-        pair = {}
-        pair['accountid'] = summoner['accountid']
-        pair['gameid'] = most_recent_in_db
-        most_recent_games.append(pair)        
+    with db.session() as session:
+        for sum_id in sum_ids:
+            res = session.query(func.max(MatchStat.game_id)).\
+                    filter(MatchStat.account_id==sum_id).one()
+            most_recent_games.append((res[0], sum_id))
 
-    beginIndex = 0
-    for game_account_pair in most_recent_games:
-        response = get_matchlist(game_account_pair['accountid'])
+    for recent_game in most_recent_games:
+        response = get_matchlist(recent_game[1])
+        begin_index = 0
         
-        #the first game from this is older than the most recent game in the db, so 
-        #go to next game/account pair
-        print(response['matches'])
-        if response['matches'][0]['gameId'] <= game_account_pair['gameid']:
-            beginIndex = 0
-            continue
-
-        insert_match_details(response['matches'])
-        beginIndex += 100
+        while(response['matches']):
+            insert_matches(response['matches'])
+            begin_index += 100
 
         
-def insert_match_details(matchlist):
-    for match in matchlist:
+def insert_match_details(match):
+    """Inserts rows into match_stat table.
 
-        with database.engine.begin() as conn:
-            row = conn.execute(text('select 1 from match where gameid = :game_id'), 
-                    game_id=match['gameId'])
-            
-        existence = row.fetchone()  
+    Insersts match details into the match_stat table for participants in the 
+    match who's stats we are tracking.  
 
-        if existence:
-            print('skipping, game already in')
-            continue
+    Args:
+        match: 
+            A Match object describing a row from the match table. 
+    """
+    
 
-        if(match['queue'] == 0 or match['queue'] >= 2000):
-            continue
+    response = get_match_details(match['gameId'])
+    
+    # FIXME: None is returned on error from get_match_details. So if there were
+    # an error inserting details for match 12345, match 12345 would be absent
+    # from records
+    if response is None: return
+    
 
+    # Use a dictionary with mapping of participant_id -> account_id to keep 
+    # track of the participantId -> PlayerDto mapping in the match response
+    # from the API. This is because the MatchDto from the api primarily 
+    # refrences participants of that match by a assigned ID.
 
-        response = get_match_details(match['gameId'])
-        if(response is None):
-            continue
+    primary_participants = {}
 
-        print(match['gameId'])
+    participant_ids = response['participantIdentities']
+
+    for participant_id_dto in participant_ids:
+        player_dto = participant_id_dto['player']
         
-        summoners = {}
-        team_win = {}
+        # Check to see if the account associated with the p_id is a primary
+        # summoner
+        if Summoner.query.filter_by(account_id=player_dto['accountId'], 
+                                    is_primary=True).first(): 
+            p_id = participant_id_dto['participantId']
+            primary_participants[p_id] = player_dto['accountId']
+   
 
-        try:
-            participant_ids = response['participantIdentities']
-        except KeyError:
-            print(response)
-            input("Press any key to continue")
+    # Now that we have the participant_ids mapped to accounts we care about,
+    # go through each participant's stat's and insert the details for primary
+    # summoners.
 
-        for participant in participant_ids:
-            with database.engine.begin() as conn:
-                row = conn.execute(text('select 1 from summoner where summonername = :sum_name'),
-                        sum_name=participant['player']['summonerName'])
+    participants = response['participants']
 
-            if(row.fetchone()):
-                print('are summoners being added')
-                summoners[participant['participantId']] = participant['player']['summonerName']
+    for participant_dto in participants:
+        p_id = participant_dto['participantId']
+        if p_id not in primary_participants.keys(): continue # not an account we 
+                                                             # care about
 
-        teams = response['teams']
+        account_id = primary_participants[p_id]
+        match_stats = MatchStat(match['gameId'], account_id,
+                                participant_dto['stats'], 
+                                participant_dto['championId'],
+                                participant_dto['timeline'])
 
-        for team in teams:
-            team_win[team['teamId']] = team['win']
-
-        participants = response['participants']
-
-        gameId = match['gameId']
-        timestamp = match['timestamp']
-        gameVersion = response['gameVersion']
-        queue = response['queueId']
-        seasonId = response['seasonId']
-
-        for participant in participants:
-            if participant['participantId'] not in summoners.keys():
-                continue
-
-            summonerName = summoners[participant['participantId']]
-            
-            if(team_win[participant['teamId']] == "Fail"): win = False
-            else: win = True
-
-            champion = participant['championId']
-
-            role = participant['timeline']['role']
-            lane = participant['timeline']['lane']
-
-            match_tuple = (gameId, summonerName, win, champion, role,
-                           lane, queue, seasonId, timestamp, gameVersion)
-
-            with database.engine.begin() as conn:
-                print('this is the insert ' +str(gameId))
-                conn.execute(text('insert into match values :match_tuple'), 
-                        match_tuple=match_tuple)
-
-
-def get_db():
-    if 'db' not in g:
-        #g.db = create_engine(current_app.config['DATABASE_URI'])
-        print('this is no more')
-    return 'g.db'
-
-
-
-def close_db(e=None):
-    db = g.pop('db', None)
-
-    if db is not None:
-        db.close()
+        db.session.add(match_stats)
+        db.session.commit()

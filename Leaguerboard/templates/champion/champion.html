@@ -82,19 +82,21 @@
     <table>
         <tr>
             <th> Summoner </th>
+            <th> Lifetime K/D/A </th>
             <th> Games Played </th>
             <th> Games Won </th>
             <th> Win % </th>
         </tr>
         {% for stat_line in player_stats %}
         <tr>
-            <td ><a href="{{ url_for('summoner.summoner_stats', summoner=stat_line['summonername']) }}">{{ stat_line['summonername'] }}</a></td>
-            <td >{{ stat_line['game_count'] }}</td>
-            <td >{{ stat_line['win_count'] }}</td>
-            {% if stat_line['game_count'] == 0 %}
-            <td >-</td>
+            <td ><a href="{{ url_for('summoner.summoner_stats', summoner=stat_line[0]) }}">{{ stat_line[0] }}</a></td>
+            <td>{{ stat_line[1]['kills'] }}/{{ stat_line[1]['deaths'] }}/{{ stat_line[1]['assists'] }}
+            <td>{{ stat_line[1]['game_count'] }}</td>
+            <td>{{ stat_line[1]['win_count'] }}</td>
+            {% if stat_line[1]['game_count'] == 0 %}
+            <td>-</td>
             {% else %}
-            <td >{{"%.2f%%" % (100.0 * stat_line['win_count']/stat_line['game_count']) }}</td>
+            <td>{{"%.2f%%" % (100.0 * stat_line[1]['win_count']/stat_line[1]['game_count']) }}</td>
             {% endif %}
         </tr>
         {% endfor %}
@@ -112,14 +114,14 @@
         </tr>
         {% for match in match_history %}
             <tr>
-                <td>{{ match[0] }}</td>
-                <td>{{ match[1] }}</td>
-                <td>__K/D/A</td>
-                <td>{{ match[2] }}</td>
-                <td>{{ match[3] }}</td>
-                <td>{{ match[4] }}</td>
+                <td>{{ match.MatchStat.win }}</td>
+                <td>{{ match.name }}</td>
+                <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }} </td>
+                <td>{{ match.MatchStat.role }}</td>
+                <td>{{ match.MatchStat.lane }}</td>
+                <td>{{ match.queue }}</td>
                 <td><script>
-                        var milisecs = {{ match[5] }} 
+                        var milisecs = {{ match.timestamp }} 
                         var local_time = new Date(milisecs)
                         document.write(local_time.toLocaleString())
                     </script>
