@@ -131,7 +131,7 @@ def populate_match():
     #    insert_match_details(match)
 
 
-def insert_matches(matchlist):
+def insert_matches(matchlist, stoping_match=None):
     """Insert matches into match table
 
     Iterate of the matchlist and insert it's details into the match table.
@@ -145,8 +145,13 @@ def insert_matches(matchlist):
 
     
     for match in matchlist:
+        if stoping_match:
+            if match['gameId'] >= stoping_match:
+                return
         exists = Match.query.filter_by(game_id=match['gameId']).first()
         if exists: continue
+
+        print(match['gameId'])
 
         if match['queue'] == 0 or match['queue'] >= 2000: continue
         
@@ -180,9 +185,8 @@ def update_match():
     for recent_game in most_recent_games:
         response = get_matchlist(recent_game[1])
         begin_index = 0
-
-        while(response['matches'] and \
-              response['matches'][-1]['gameId'] > recent_game[0]):
+        
+        while(response['matches']):
             insert_matches(response['matches'])
             begin_index += 100
 
@@ -199,7 +203,7 @@ def insert_match_details(match):
     """
     
 
-    response = get_match_details(match.game_id)
+    response = get_match_details(match['gameId'])
     
     # FIXME: None is returned on error from get_match_details. So if there were
     # an error inserting details for match 12345, match 12345 would be absent
@@ -239,7 +243,7 @@ def insert_match_details(match):
                                                              # care about
 
         account_id = primary_participants[p_id]
-        match_stats = MatchStat(match.game_id, account_id,
+        match_stats = MatchStat(match['gameId'], account_id,
                                 participant_dto['stats'], 
                                 participant_dto['championId'],
                                 participant_dto['timeline'])
