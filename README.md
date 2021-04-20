@@ -10,8 +10,8 @@ After cloning, create a virtual environment and install the requirements.
     $ source venv/bin/activate
     (venv) $ pip install -r requirements.txt
     
-Running
-------
+Running Locally
+---------------
 
 To run the flask app locally, first run the command
 
