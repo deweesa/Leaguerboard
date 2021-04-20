@@ -2,6 +2,7 @@ from flask import (Blueprint, render_template, request)
 from sqlalchemy import text
 import json
 from . import database
+from Leaguerboard.db import (Summoner, Match, MatchStat)
 
 bp = Blueprint('champions', __name__)
 
@@ -26,49 +27,71 @@ def champion(champ):
     champ_dict = champ_full[champ]
     key = champ_dict['key']
 
-    Session = sessionmaker(bind=database.engine)
-    session = Session()
-
-    match_history = session.query(MatchStat, Match, Summoner).\
-            join(Match, MatchStat.game_id==Match.game_id).all()
-
-    """ 
-    with database.engine.begin() as conn:
-        game_count = conn.execute(text('select count (1) from match where champion = :champ'), champ=key).fetchone()[0]
-        win_count = conn.execute(text('select count (1) from match where champion = :champ and win = true'), champ=key).fetchone()[0]
-
-        players = conn.execute(text('select distinct(summonername) from match where champion = :champ'), champ=key)
-        
-        player_stats = []
-
-        for player in players:
-            stat_line = {}
-            stat_line['summonername'] = player['summonername']
-            stat_line['game_count'] = conn.execute(text('''select count(1) from match 
-                                                           where champion = :champ 
-                                                                 and summonername = :sum_name'''), 
-                                                   champ=key, sum_name=player['summonername']).fetchone()[0]
-
-            stat_line['win_count'] = conn.execute(text('''select count(1) from match 
-                                                          where champion = :champ 
-                                                                 and summonername = :sum_name 
-                                                                 and win = true'''), 
-                                                   champ=key, sum_name=player['summonername']).fetchone()[0]
-
-            player_stats.append(stat_line)
-    """
-            
-    player_stats.sort(reverse=True, key=lambda stat_line: stat_line['game_count'])
+    #match_history = database.session.query(MatchStat, Match, Summoner).\
+    #        join(Match, MatchStat.game_id==Match.game_id).all()
     
-    role_count = get_role_count(key)
-    lane_count = get_lane_count(key)
+    #join = database.session.query(MatchStat, Match.timestamp, Summoner.name).\
+    #        join(MatchStat.game_id == Match.game_id).\
+    #        join(MatchStat.account_id == Summoner.account_id).all()
 
-    with database.engine.connect() as conn:
-        match_history = conn.execute(text('select win, summonername, role, lane, queue, timestamp from match where champion=:champ'), champ=key).fetchall()
+    matches = database.session.query(MatchStat, Summoner.name, Match.timestamp, 
+                                  Match.queue).\
+            join(Summoner, MatchStat.account_id == Summoner.account_id).\
+            join(Match, MatchStat.game_id == Match.game_id).\
+            filter(MatchStat.champ==key).\
+            order_by(Match.timestamp.desc()).\
+            all()
 
-    match_history.sort(reverse=True, key=lambda match: match[5])
+    print(matches[0].timestamp)
+    print(matches[0].MatchStat.win)
 
-    return render_template('champion/champion.html', champ=champ_dict, game_count=game_count, win_count=win_count, player_stats=player_stats, role_count=role_count, lane_count=lane_count, match_history=match_history)
+    # TODO: Do we care about one for all?
+    game_count = len(matches)
+    win_count = 0 
+
+    player_stats = {}
+    role_count = {}
+    lane_count = {}
+
+    for match in matches:
+        #if match.MatchStat.win: win_count += 1
+
+        if match.name not in player_stats.keys():
+            player_stats[match.name] = {'game_count': 0, 'win_count': 0, 
+                    'kills': 0, 'deaths': 0, 'assists': 0}
+        
+        player_stats[match.name]['game_count'] += 1
+
+        if match.MatchStat.win:
+            win_count += 1 #add to global win count for the champion
+            player_stats[match.name]['win_count'] += 1 # add to win count for
+                                                      # specifc player given
+                                                      # this champion
+        player_stats[match.name]['kills'] += match.MatchStat.kills
+        player_stats[match.name]['deaths'] += match.MatchStat.deaths
+        player_stats[match.name]['assists'] += match.MatchStat.assists
+
+        if match.MatchStat.role not in role_count.keys():
+            role_count[match.MatchStat.role] = 1
+        else:
+            role_count[match.MatchStat.role] += 1
+
+        if match.MatchStat.lane not in lane_count.keys():
+            lane_count[match.MatchStat.lane] = 1
+        else:
+            lane_count[match.MatchStat.lane] += 1
+
+    del lane_count['NONE']
+
+    player_stats = player_stats.items()
+    player_stats = sorted(player_stats, 
+            key=lambda stat_line: stat_line[1]['game_count'], reverse=True)
+
+
+    return render_template('champion/champion.html', champ=champ_dict, 
+            game_count=game_count, win_count=win_count, 
+            player_stats=player_stats, role_count=role_count, 
+            lane_count=lane_count, match_history=matches)
 
 
 def get_role_count(champ_key):
