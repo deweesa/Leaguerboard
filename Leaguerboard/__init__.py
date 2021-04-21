@@ -24,7 +24,7 @@ def create_app(test_config=None):
 
         # FIXME: Need to have this configure dynamically depending on running
         # environment. 
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL').replace("://", "ql://", 1),
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')#.replace("://", "ql://", 1),
     )
 
     from . import models

@@ -18,6 +18,7 @@ import json
 import inspect
 import logging
 import os
+import sys
 
 API_KEY = os.getenv('SECRET_KEY')
 PARAMS = {'api_key': API_KEY}
@@ -120,6 +121,8 @@ def _api_helper(url: str, method_input: str, params):
             Currently retuns empty if there was any issue with the request.
     """
 
+    if API_KEY is None:
+        sys.exit("Aborting:\n    The API Key has not been set")
 
     response = requests.get(url+method_input, params=params)
 
@@ -139,6 +142,7 @@ def _api_helper(url: str, method_input: str, params):
     if(response.status_code == 401):
         error_type="Unauthroized"
     if(response.status_code == 403):
+        sys.exit("Aborting:\n    Please reset the API Key")
         error_type="Forbidden"
     if(response.status_code == 404):
         error_type="Data not found"
