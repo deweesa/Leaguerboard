@@ -8,7 +8,7 @@
     <p>Select a Summoner to see their stats</p>
     <ul>
     {% for summoner in summoners %}
-    <li><a href="{{ url_for('summoner.summoner_stats', summoner=summoner['summonerName']) }}">{{ summoner['summonerName'] }}</a>
+    <li><a href="{{ url_for('summoner.summoner_stats', summoner=summoner) }}">{{ summoner }}</a>
     {% endfor %}
     </ul>
 {% endblock %}

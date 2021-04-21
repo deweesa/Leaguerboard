@@ -1,11 +1,46 @@
 <!doctype html>
 <head>
     <title>{% block title %}{% endblock %} - Leaguerboard</title>
-    <style>{% block style %}{% endblock %}</style>
+    <style>
+        .navbar li {
+            display: inline;
+        }
+
+        .navbar {
+            z-index: 1;
+            overflow: hidden;
+            background-color: #333;
+            position: fixed;
+            top: 0;
+            width: 100%;
+        }
+
+        .navbar a {
+            float: left;
+            display: block;
+            color: #f2f2f2;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background: #ddd;
+            color: black;
+        }
+
+        .content {
+            margin: 12px;
+            padding-top: 70px;
+        }
+        
+
+            
+        {% block style %}{% endblock %}</style>
 </head>
-<nav>
-    <h1>Leaguerboard</h1>
+<nav class="navbar">
     <ul>
+        <li><a href={{ url_for('home') }}>Leaguerboard</a></li>
         <li><a href={{ url_for('summoner.summoner') }}>player stats</a></li>
         <li><a href={{ url_for('champions.champions') }}>champ stats</a></li>
         <li><a href={{ url_for('team.team') }}>team stats</a></li>

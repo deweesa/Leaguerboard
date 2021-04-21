@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
 
+{% block style %}
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 15px;
+    }
+{% endblock %}
+
 {% block header %}
     <h1>{% block title %}{{ summoner }}'s Stats{% endblock %}</h1>
 {% endblock %}
@@ -8,4 +19,50 @@
 <p>Win Percentage: {{ "%.2f%%" % (100.0 * win_count/game_count) }}</p>
 <p>Games Won: {{ win_count }}</p>
 <p>Games Played: {{ game_count }} </p>
+
+<table>
+    <tr>
+        <th>Played</th>
+        <th>Won</th>
+        <th>Win %</th>
+    </tr>
+    <tr>
+        <td>{{ game_count }}</td>
+        <td>{{ win_count }}</td>
+        <td>{{ "%.2f%%" % (100.0 * win_count/game_count) }}</td>
+    </tr>
+</table>
+<br>
+<table>
+    <tr>
+        <th>Result</th>
+        <th>Champion</th>
+        <th>K/D/A</th>
+        <th>Role</th>
+        <th>Lane</th>
+        <th>Queue</th>
+        <th>Time</th>
+    </tr>
+    {% for match in matches %}
+        <tr>
+            {% if match.MatchStat.win %}
+                <td>Victory</td>
+            {% else %}
+                <td>Defeat</td>
+            {% endif %}
+
+            <td><a href="{{ url_for('champions.champion', champ=champ_names[match.MatchStat.champ|string]) }}">{{ champ_names[match.MatchStat.champ|string] }}</a></td>
+            <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }}</td>
+            <td>{{ match.MatchStat.role }}</td>
+            <td>{{ match.MatchStat.lane }}</td>
+            <td>{{ match.Match.queue }}</td>
+            <td><script>
+                    var milisecs = {{ match.Match.timestamp }}
+                    var local_time = new Date(milisecs)
+                    document.write(local_time.toLocaleString())
+                </script>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
 {% endblock %}

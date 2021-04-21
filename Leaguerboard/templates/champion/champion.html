@@ -7,38 +7,128 @@
     }
     th, td {
         padding: 15px;
+        text-align: center;
     }
+
+    .map_info {
+        position: relative;
+        height: 240px;
+        width: 240px;
+        text-align: center;
+        background-image: url({{ url_for('static', filename='img/map/map11.png') }});
+        background-repeat: no-repeat;
+        background-size: contain;
+        color: #FFFFFF;
+        margin-right: 30%;
+        margin-left: 4%;
+    }
+
+    .TOP {
+        position: absolute;
+        top: 24px;
+        left: 22px;
+    }
+
+    .MIDDLE {
+        position: absolute;
+        top: 45%;
+        width: 100%;
+    }
+
+    .JUNGLE {
+        position: absolute;
+        top: 25%;
+        width: 55%;
+    }
+
+    .sup {
+        position: absolute;
+    }
+
+    .BOTTOM {
+        position: absolute;
+        bottom: 24px;
+        right: 22px;
+    }
+
+    .lore {
+        width: 50%;
+    }
+
+
 {% endblock %}
 
-{% block header %}
-    <h1>{% block title %}{{ champ['name'] }}{% endblock %}</h1>
-{% endblock %}
+{% block title %}{{ champ['name'] }}{% endblock %}
 
 {% block content %}
-<img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
-    <h3>{{ champ['title'] }} </h3>
-    <p> {{ champ['lore'] }} </p>
-    <p> {{ game_count }} </p>
-    <p> {{ win_count }} </p>
+    <div class="lore">
+        <h1>{{ champ['name'] }}</h1>
+        <p>{{ role_count }}</p>
+        <p>{{ lane_count }}</p>
+        <img src="{{ url_for('static', filename='img/champion/'+champ['image']['full']) }}"/>
+        <h3>{{ champ['title'] }} </h3>
+        <p> {{ champ['lore'] }} </p>
+    </div>
+    <div class="map_info">
+        <!--<img src="{{ url_for('static', filename='img/map/map11.png') }}" style="max-width=50%"/>-->
+        {% for lane in lane_count.keys() %}
+            <div class={{ lane }}>{{ "%.0f%%" % (100.0*lane_count[lane]/lane_count.values()|sum()) }}</div>
+        {% endfor %}
+    </div>
+
+    <p> Total games played: {{ game_count }} </p>
+    <p> Total games won:{{ win_count }} </p>
 
     <table>
         <tr>
             <th> Summoner </th>
+            <th> Lifetime K/D/A </th>
             <th> Games Played </th>
             <th> Games Won </th>
             <th> Win % </th>
         </tr>
         {% for stat_line in player_stats %}
         <tr>
-            <td style="text-align:center">{{ stat_line['summonerName'] }}</td>
-            <td style="text-align:center">{{ stat_line['game_count'] }}</td>
-            <td style="text-align:center">{{ stat_line['win_count'] }}</td>
-            {% if stat_line['game_count'] == 0 %}
-            <td style="text-align:center">-</td>
+            <td ><a href="{{ url_for('summoner.summoner_stats', summoner=stat_line[0]) }}">{{ stat_line[0] }}</a></td>
+            <td>{{ stat_line[1]['kills'] }}/{{ stat_line[1]['deaths'] }}/{{ stat_line[1]['assists'] }}
+            <td>{{ stat_line[1]['game_count'] }}</td>
+            <td>{{ stat_line[1]['win_count'] }}</td>
+            {% if stat_line[1]['game_count'] == 0 %}
+            <td>-</td>
             {% else %}
-            <td style="text-align:center">{{"%.2f%%" % (100.0 * stat_line['win_count']/stat_line['game_count']) }}</td>
+            <td>{{"%.2f%%" % (100.0 * stat_line[1]['win_count']/stat_line[1]['game_count']) }}</td>
             {% endif %}
         </tr>
         {% endfor %}
     </table>
-{% endblock %}
+    <br>
+    <table>
+        <tr>
+            <th>Result</th>
+            <th>Summoner</th>
+            <th>K/D/A</th>
+            <th>Role</th>
+            <th>Lane</th>
+            <th>Queue</th>
+            <th>Date</th>
+        </tr>
+        {% for match in match_history %}
+            <tr>
+                <td>{{ match.MatchStat.win }}</td>
+                <td>{{ match.name }}</td>
+                <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }} </td>
+                <td>{{ match.MatchStat.role }}</td>
+                <td>{{ match.MatchStat.lane }}</td>
+                <td>{{ match.queue }}</td>
+                <td><script>
+                        var milisecs = {{ match.timestamp }} 
+                        var local_time = new Date(milisecs)
+                        document.write(local_time.toLocaleString())
+                    </script>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+
+    {% endblock %}
