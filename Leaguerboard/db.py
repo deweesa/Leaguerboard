@@ -146,8 +146,8 @@ def insert_matches(matchlist, stoping_match=None):
     
     for match in matchlist:
         if stoping_match:
-            if match['gameId'] >= stoping_match:
-                return
+            if match['gameId'] <= stoping_match:
+                return []
         exists = Match.query.filter_by(game_id=match['gameId']).first()
         if exists: continue
 
@@ -165,6 +165,12 @@ def insert_matches(matchlist, stoping_match=None):
 @click.command('update_match')
 @with_appcontext
 def update_match():
+    """Update the match table
+
+    We go through the table and get the most recent game played from our 
+    current match history for each player. We then insert matches from 
+    that players matchlist until we hit their previously most recent game.
+    """
     #with database.engine.begin() as conn:
     #    summoners = conn.execute(text('select * from summoner')).fetchall()
     sum_info = Summoner.query.all()
@@ -172,6 +178,7 @@ def update_match():
 
     sum_ids = db.session.query(Summoner.account_id).\
             filter_by(is_primary=True).all()
+
     sum_ids = [x[0] for x in sum_ids]
 
     most_recent_games = []
@@ -184,11 +191,16 @@ def update_match():
 
     for recent_game in most_recent_games:
         response = get_matchlist(recent_game[1])
+
+        if response['matches'][0]['gameId'] == recent_game[0]:
+            continue
+
         begin_index = 0
         
         while(response['matches']):
-            insert_matches(response['matches'])
+            insert_matches(response['matches'], recent_game[0])
             begin_index += 100
+            response = get_matchlist(recent_game[1], begin_index)
 
         
 def insert_match_details(match):
