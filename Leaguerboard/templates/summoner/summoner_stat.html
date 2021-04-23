@@ -51,7 +51,7 @@
                 <td>Defeat</td>
             {% endif %}
 
-            <td><a href="{{ url_for('champions.champion', champ=champ_names[match.MatchStat.champ|string]) }}">{{ champ_names[match.MatchStat.champ|string] }}</a></td>
+            <td><a href="{{ url_for('champions.champion', champ=champ_names[match.MatchStat.champ|string]) }}">{{ champ_full[champ_names[match.MatchStat.champ|string]]['name'] }}</a></td>
             <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }}</td>
             <td>{{ match.MatchStat.role }}</td>
             <td>{{ match.MatchStat.lane }}</td>

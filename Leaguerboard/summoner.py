@@ -48,5 +48,5 @@ def summoner_stats(summoner):
     return render_template('summoner/summoner_stat.html', summoner=summoner, 
                             win_count=win_count, game_count=game_count, 
                             matches=match_history, 
-                            champ_names=champ_names)
+                            champ_names=champ_names, champ_full=champ_full['data'])
 

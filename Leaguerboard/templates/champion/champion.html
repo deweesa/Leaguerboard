@@ -102,16 +102,25 @@
         {% endfor %}
     </table>
     <br>
-    <table>
-        <tr>
-            <th>Result</th>
-            <th>Summoner</th>
-            <th>K/D/A</th>
-            <th>Role</th>
-            <th>Lane</th>
-            <th>Queue</th>
-            <th>Date</th>
-        </tr>
+    <script>
+        $(document).ready(function() {
+            $('#history').DataTable();
+            $('.dataTables_length').addClass('bs-select');
+        } );
+    </script>
+    <table id="history">
+        <thead>
+            <tr>
+                <th>Result</th>
+                <th>Summoner</th>
+                <th>K/D/A</th>
+                <th>Role</th>
+                <th>Lane</th>
+                <th>Queue</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
         {% for match in match_history %}
             <tr>
                 <td>{{ match.MatchStat.win }}</td>
@@ -128,6 +137,7 @@
                 </td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
 
 
