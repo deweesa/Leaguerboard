@@ -15,7 +15,11 @@ database = SQLAlchemy()
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     
-    
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+
+    if os.getenv('ENV') == 'heroku':
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("://", "ql://", 1)
+
     app.config.from_mapping(
         SECRET_KEY='dev',
         #the below line is legacy from when sqlite3 was used to store data.
