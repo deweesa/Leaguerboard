@@ -37,6 +37,7 @@ def init_app(app):
     app.cli.add_command(clear_summoner)
     app.cli.add_command(clear_match)
     app.cli.add_command(update_match)
+    app.cli.add_command(populate_summoner)
 
 
 @click.command('pop-db')
@@ -70,7 +71,8 @@ def populate_db():
     populate_match()
     click.echo('Match table populated.')
 
-
+@click.command('pop-sum')
+@with_appcontext
 def populate_summoner():
     """Inserts rows into the summoners table.
 
@@ -101,6 +103,8 @@ def populate_summoner():
         db.session.commit()
 
     
+@click.command('pop-match')
+@with_appcontext
 def populate_match():
     """Gets match history for each summoner
 
@@ -162,7 +166,7 @@ def insert_matches(matchlist, stoping_match=None):
         insert_match_details(match_details)
 
 
-@click.command('update_match')
+@click.command('update-match')
 @with_appcontext
 def update_match():
     """Update the match table

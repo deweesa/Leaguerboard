@@ -161,4 +161,4 @@ def _api_helper(url: str, method_input: str, params):
                   str(response.status_code), error_type, url, method_input, 
                   str(params))
 
-    return None
+    return []
