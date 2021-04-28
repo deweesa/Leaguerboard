@@ -17,18 +17,14 @@ def create_app(test_config=None):
     
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
+    # If the app is being ran on heroku, their listed postgresql dialect is 
+    # outdated, so we have to edit it a tad before handing it off to the app.
     if os.getenv('ENV') == 'heroku':
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("://", "ql://", 1)
 
     app.config.from_mapping(
         SECRET_KEY='dev',
-        #the below line is legacy from when sqlite3 was used to store data.
-        #DATABASE=os.path.join(app.instance_path, 'Leaguerboard.sqlite'),
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
-
-        # FIXME: Need to have this configure dynamically depending on running
-        # environment. 
-        #SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')#.replace("://", "ql://", 1),
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     )
 
