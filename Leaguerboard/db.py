@@ -174,10 +174,9 @@ def update_match():
     We go through the table and get the most recent game played from our 
     current match history for each player. We then insert matches from 
     that players matchlist until we hit their previously most recent game.
+
+    -Need to flag if a user isn't in the database to begin with
     """
-    #with database.engine.begin() as conn:
-    #    summoners = conn.execute(text('select * from summoner')).fetchall()
-    sum_info = Summoner.query.all()
     most_recent_games = []
 
     sum_ids = db.session.query(Summoner.account_id).\
@@ -186,12 +185,19 @@ def update_match():
     sum_ids = [x[0] for x in sum_ids]
 
     most_recent_games = []
+    sums_to_init = []
 
     with db.session() as session:
         for sum_id in sum_ids:
             res = session.query(func.max(MatchStat.game_id)).\
                     filter(MatchStat.account_id==sum_id).one()
-            most_recent_games.append((res[0], sum_id))
+            print(res) 
+            if res[0] is None:
+                print("this should be when mitchell's shit blows up")
+                sum_ids.remove(sum_id)
+                sums_to_init.append(sum_id)
+            else:
+                most_recent_games.append((res[0], sum_id))
 
     for recent_game in most_recent_games:
         response = get_matchlist(recent_game[1])
@@ -205,6 +211,9 @@ def update_match():
             insert_matches(response['matches'], recent_game[0])
             begin_index += 100
             response = get_matchlist(recent_game[1], begin_index)
+
+    for summoner in sums_to_init:
+        print('yee')
 
         
 def insert_match_details(match):
@@ -257,6 +266,9 @@ def insert_match_details(match):
         p_id = participant_dto['participantId']
         if p_id not in primary_participants.keys(): continue # not an account we 
                                                              # care about
+
+        print(db.session.query(MatchStat.game_id, MatchStat.account_id).\
+                filter_by(game_id=match['gameId'], account_id=p_id).one())
 
         account_id = primary_participants[p_id]
         match_stats = MatchStat(match['gameId'], account_id,
