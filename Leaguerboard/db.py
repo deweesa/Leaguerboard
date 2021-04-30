@@ -16,6 +16,7 @@ import time
 import os
 import requests
 import json
+import sys
 
 import click
 from flask import current_app, g
@@ -199,18 +200,57 @@ def update_match():
             else:
                 most_recent_games.append((res[0], sum_id))
 
+    history_hopper = []
+    hop_ix = 0
     for recent_game in most_recent_games:
         response = get_matchlist(recent_game[1])
 
-        if response['matches'][0]['gameId'] == recent_game[0]:
+        if response['matches'][0]['gameId'] <= recent_game[0]:
             continue
 
         begin_index = 0
         
+        history_hopper.append([])
+        history_hopper[hop_ix] = []
+
         while(response['matches']):
-            insert_matches(response['matches'], recent_game[0])
+            #insert_matches(response['matches'], recent_game[0])
+            if recent_game[0] < response['matches'][0]['gameId'] and \
+               recent_game[0] >= response['matches'][-1]['gameId']:
+                index = response['matches'].index(recent_game)
+                response['matches'] = response['matches'][:index]
+            elif recent_game >= response['matches'][0]['gameId']:
+                continue
+
+            history_hopper[hop_ix] += response['matches']
             begin_index += 100
             response = get_matchlist(recent_game[1], begin_index)
+
+            
+
+        hop_ix += 1
+
+    for i in range(len(history_hopper)):
+        history_hopper[i] = [x['gameId'] for x in history_hopper[i]]
+        history_hopper[i].sort()
+
+    master_list = []
+
+    while history_hopper != []:
+        min_game_id = sys.maxsize
+        min_game_index = -1
+
+        for i in range(len(history_hopper)):
+            if history_hopper[i][0] < min_game_id:
+                min_game_id = history_hopper[i][0]
+                min_game_index = i
+
+        if len(master_list) == 0: master_list.append(min_game_id)
+        elif master_list[-1] != min_game_id: master_list.append(min_game_id)
+        history_hopper[min_game_index].remove(min_game_id)
+        if history_hopper[min_game_index] == []: del history_hopper[min_game_index]
+
+    print(master_list)
 
     for summoner in sums_to_init:
         print('yee')
