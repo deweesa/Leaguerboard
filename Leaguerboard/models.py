@@ -40,6 +40,12 @@ class Match(db.Model):
         self.timestamp = response['timestamp']
         #game_version is not available in matchlist method.
 
+    def __init__(self, game_id, queue, season_id, timestamp):
+        self.game_id = game_id
+        self.queue = queue
+        self.season_id = season_id
+        self.timestamp = timestamp
+
 
 
 class MatchStat(db.Model):
