@@ -128,10 +128,11 @@ def _api_helper(url: str, method_input: str, params):
 
     rCode = response.status_code #status code for response
 
-    while(rCode == 429 or (rcode >= 500 and rcode <= 599):
-	if(rcode == 429):
+    while(rCode == 429 or (rCode >= 500 and rCode <= 599)):
+        if(rCode == 429):
             time.sleep(int(response.headers['retry-after']))
         response = requests.get(url+method_input, params=params)
+        rCode = response.status_code
 
     if(response.status_code == 200):
         return response.json()
