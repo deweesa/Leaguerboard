@@ -126,8 +126,11 @@ def _api_helper(url: str, method_input: str, params):
 
     response = requests.get(url+method_input, params=params)
 
-    while(response.status_code == 429):
-        time.sleep(int(response.headers['retry-after']))
+    rCode = response.status_code #status code for response
+
+    while(rCode == 429 or (rcode >= 500 and rcode <= 599):
+	if(rcode == 429):
+            time.sleep(int(response.headers['retry-after']))
         response = requests.get(url+method_input, params=params)
 
     if(response.status_code == 200):
@@ -137,24 +140,24 @@ def _api_helper(url: str, method_input: str, params):
 
     # TODO: maybe change this if block into a dicitionary mapping int->err_type
     # would act a lot like a switch statement instead of this wall of if's
-    if(response.status_code == 400):
+    if(rCode == 400):
         error_type="Bad Request"
-    if(response.status_code == 401):
+    if(rCode == 401):
         error_type="Unauthroized"
-    if(response.status_code == 403):
+    if(rCode == 403):
         sys.exit("Aborting:\n    Please reset the API Key")
         error_type="Forbidden"
-    if(response.status_code == 404):
+    if(rCode == 404):
         error_type="Data not found"
-    if(response.status_code == 415):
+    if(rCode == 415):
         error_type="Unsupported media type"
-    if(response.status_code == 500):
+    if(rCode == 500):
         error_type="Internal Server Error"
-    if(response.status_code == 502):
+    if(rCode == 502):
         error_type="Bad gateway"
-    if(response.status_code == 503):
+    if(rCode == 503):
         error_type="Service unavailable"
-    if(response.status_code == 504):
+    if(rCode == 504):
         error_type="Gateway timeout"
 
     logging.error("%s - %s\n\tAPI Method: %s\n\tInput: %s\n\tParameters: %s", 
