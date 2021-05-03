@@ -58,7 +58,7 @@
         } );
     </script>
 
-    <table class="table table-hover">
+    <table id='match-history' class="table table-hover">
         <thead class="thead-dark">
             <tr>
                 <th scope="col">Result</th>
@@ -97,3 +97,16 @@
     </table>
 </div>
 {% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('#match-history').DataTable();
+        } );
+    </script>
+{% endblock %}
+
+
+
+
+
