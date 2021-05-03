@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
 
-{% block header %}
-    <h1>{% block title %}Team Selection{% endblock %}</h1>
-{% endblock %}
+{% block title %}{Team Selection}{% endblock %} 
 
-{% block content %}
-    <p>Select a group of summoners for team's stats</p>
+{% block content %}   
+   <h1>Team Selection</h1> 
+   <p>Select a group of summoners for team's stats</p>
     
     <form method="post">
         {% for summoner in summoners %}

@@ -8,6 +8,7 @@ import os
 
 from flask import (Flask, render_template)
 from flask_sqlalchemy import SQLAlchemy
+from flask_bootstrap import Bootstrap
 
 
 database = SQLAlchemy()
@@ -27,6 +28,8 @@ def create_app(test_config=None):
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     )
+
+    Bootstrap(app)
 
     from . import models
 
