@@ -16,6 +16,7 @@ import time
 import os
 import requests
 import json
+import sys
 
 import click
 from flask import current_app, g
@@ -137,6 +138,7 @@ def populate_match():
 
 def insert_matches(matchlist, stoping_match=None):
     """Insert matches into match table
+    DEPRECATED
 
     Iterate of the matchlist and insert it's details into the match table.
     Before inserting the match we check if it's already refrenced in the table
@@ -152,15 +154,14 @@ def insert_matches(matchlist, stoping_match=None):
         if stoping_match:
             if match['gameId'] <= stoping_match:
                 return []
+
         exists = Match.query.filter_by(game_id=match['gameId']).first()
-        if exists: continue
 
-        print(match['gameId'])
-
-        if match['queue'] == 0 or match['queue'] >= 2000: continue
+        if not exists: 
+            if match['queue'] == 0 or match['queue'] >= 2000: continue
         
-        db.session.add(Match(match))
-        db.session.commit()
+            db.session.add(Match(match))
+            db.session.commit()
 
         match_details = get_match_details(match['gameId'])
         insert_match_details(match_details)
@@ -172,59 +173,126 @@ def update_match():
     """Update the match table
 
     We go through the table and get the most recent game played from our 
-    current match history for each player. We then insert matches from 
-    that players matchlist until we hit their previously most recent game.
+    current match history for each player. We then gather the individual match
+    history that haven't been inserted into our tables, then create
+    a master list of matches to insert into the tables.
     """
-    #with database.engine.begin() as conn:
-    #    summoners = conn.execute(text('select * from summoner')).fetchall()
-    sum_info = Summoner.query.all()
     most_recent_games = []
 
     sum_ids = db.session.query(Summoner.account_id).\
             filter_by(is_primary=True).all()
 
+    # Get just the account_ids for each of the summoners
     sum_ids = [x[0] for x in sum_ids]
 
+    # Most recent games for each of the summoners in our table.
     most_recent_games = []
 
     with db.session() as session:
         for sum_id in sum_ids:
             res = session.query(func.max(MatchStat.game_id)).\
                     filter(MatchStat.account_id==sum_id).one()
-            most_recent_games.append((res[0], sum_id))
 
+            # If a summoner in the table doesn't have a match histroy yet, then
+            # mark their most recent game as 0. Then thier whole match history
+            # is inserted. 
+            if res[0] is None:
+                most_recent_games.append({"game_id":0, "sum_id":sum_id})
+            else:
+                most_recent_games.append({"game_id":res[0], "sum_id":sum_id})
+
+    # History_hopper is an array containing arrays of each summoner's match
+    # history. Then once we get the history for each of the summoners, we 
+    # consolidate each of the arrays into one master history. The match history
+    # is iterated through to insert into match and match_stat.
+    history_hopper = []
+    hop_ix = 0
     for recent_game in most_recent_games:
-        response = get_matchlist(recent_game[1])
+        response = get_matchlist(recent_game['sum_id'])
 
-        if response['matches'][0]['gameId'] == recent_game[0]:
+        if recent_game['game_id'] >= response['matches'][0]['gameId']:
             continue
 
         begin_index = 0
         
-        while(response['matches']):
-            insert_matches(response['matches'], recent_game[0])
-            begin_index += 100
-            response = get_matchlist(recent_game[1], begin_index)
+        history_hopper.append([])
+        history_hopper[hop_ix] = []
 
+        while(response['matches']):
+            match_list = [x['gameId'] for x in response['matches']]
+
+            if recent_game['game_id'] <= match_list[0] \
+               and recent_game['game_id'] >= match_list[-1]:
+                index = match_list.index(recent_game['game_id'])
+                match_list = match_list[:index]
+            elif recent_game['game_id'] >= match_list[0]:
+                response['matches'] = None
+                continue
+
+            history_hopper[hop_ix] += match_list
+            begin_index += 100
+            response = get_matchlist(recent_game['sum_id'], begin_index)
+
+        hop_ix += 1
+
+    for i in range(len(history_hopper)):
+        history_hopper[i].sort()
+
+    master_list = []
+
+    while history_hopper != []:
+        min_game_id = sys.maxsize
+        min_game_index = -1
+
+        for i in range(len(history_hopper)):
+            if history_hopper[i][0] < min_game_id:
+                min_game_id = history_hopper[i][0]
+                min_game_index = i
+
+        if len(master_list) == 0: 
+            master_list.append(min_game_id)
+        elif master_list[-1] != min_game_id: 
+            master_list.append(min_game_id)
+
+        history_hopper[min_game_index].remove(min_game_id)
+        if history_hopper[min_game_index] == []: 
+            del history_hopper[min_game_index]
+
+    print(master_list)
+    for match in master_list:
+        insert_match_details(match)
         
-def insert_match_details(match):
+def insert_match_details(game_id):
     """Inserts rows into match_stat table.
 
-    Insersts match details into the match_stat table for participants in the 
-    match who's stats we are tracking.  
+    Inserts basic match details and then more specific match statistics. If a 
+    given match is included in the match table, we still iterate through it's 
+    participants to check that none of the primary summoners need their match
+    details inserted.
 
     Args:
-        match: 
-            A Match object describing a row from the match table. 
+        game_id: 
+            a game_id used to key into the Riot API for match details. 
     """
     
 
-    response = get_match_details(match['gameId'])
+    response = get_match_details(game_id)
+
+    if match['queue'] == 0 or match['queue'] >= 2000: return
     
     # FIXME: None is returned on error from get_match_details. So if there were
     # an error inserting details for match 12345, match 12345 would be absent
     # from records
     if response is None: return
+
+    # Insert into match table if it's not already there
+    exists = Match.query.filter_by(game_id=game_id).first()
+    print(exists)
+    if exists is None:
+        match = Match(response['gameId'], response['queueId'], 
+                response['seasonId'], response['gameCreation'])
+        db.session.add(match)
+        db.session.commit()
     
 
     # Use a dictionary with mapping of participant_id -> account_id to keep 
@@ -258,8 +326,15 @@ def insert_match_details(match):
         if p_id not in primary_participants.keys(): continue # not an account we 
                                                              # care about
 
+        res = MatchStat.query.filter_by(account_id=primary_participants[p_id],
+                game_id=game_id).first()
+
+        print(res)
+        if res is not None:
+            continue
+
         account_id = primary_participants[p_id]
-        match_stats = MatchStat(match['gameId'], account_id,
+        match_stats = MatchStat(game_id, account_id,
                                 participant_dto['stats'], 
                                 participant_dto['championId'],
                                 participant_dto['timeline'])
