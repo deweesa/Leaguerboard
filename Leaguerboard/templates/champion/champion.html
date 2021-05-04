@@ -101,7 +101,9 @@
 {% block scripts %}
     <script>
         $(document).ready(function() {
-            $('#match-history').DataTable();
+            $('#match-history').DataTable( {
+                "order": [[6, "desc"]]
+            } );
         } );
     </script>
 {% endblock %}
