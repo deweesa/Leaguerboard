@@ -64,6 +64,7 @@ def create_app(test_config=None):
     def home():
         return render_template('home/home.html')
 
+    """
     from . import filters
     @app.template_filter('readable')
     def readable(value):
@@ -72,5 +73,6 @@ def create_app(test_config=None):
     @app.template_filter('queue')
     def queue(value):
         return filters.queue(value)
+        """
 
     return app
