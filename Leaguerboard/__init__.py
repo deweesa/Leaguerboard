@@ -8,6 +8,7 @@ import os
 
 from flask import (Flask, render_template)
 from flask_sqlalchemy import SQLAlchemy
+from flask_bootstrap import Bootstrap
 
 
 database = SQLAlchemy()
@@ -27,6 +28,8 @@ def create_app(test_config=None):
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI
     )
+
+    Bootstrap(app)
 
     from . import models
 
@@ -60,5 +63,14 @@ def create_app(test_config=None):
     @app.route('/')
     def home():
         return render_template('home/home.html')
+
+    from . import filters
+    @app.template_filter('readable')
+    def readable(value):
+        return filters.readable(value)
+
+    @app.template_filter('queue')
+    def queue(value):
+        return filters.queue(value)
 
     return app

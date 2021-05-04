@@ -99,8 +99,9 @@ def champion(champ):
         else:
             lane_count[match.MatchStat.lane] += 1
 
-    del lane_count['NONE'] # Don't know what to do with NONE lane, so trashing
-                           # it for now
+    if 'NONE' in lane_count:
+        del lane_count['NONE'] # Don't know what to do with NONE lane, so trashing
+                               # it for now
 
     # Convert dictionary to list of tuples, so that we can sort the player
     # stats by number of games played with the given champion.
