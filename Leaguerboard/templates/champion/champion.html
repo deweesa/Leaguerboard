@@ -82,9 +82,9 @@
                 </th>
                 <td><a href={{ url_for('summoner.summoner_stats', summoner=match.name) }}>{{ match.name }}</a></td>
                 <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }} </td>
-                <td>{{ match.MatchStat.role }}</td>
-                <td>{{ match.MatchStat.lane }}</td>
-                <td>{{ match.queue }}</td>
+                <td>{{ match.MatchStat.role|readable }}</td>
+                <td>{{ match.MatchStat.lane|readable }}</td>
+                <td>{{ match.queue|queue }}</td>
                 <td><script>
                         var milisecs = {{ match.timestamp }} 
                         var local_time = new Date(milisecs)
