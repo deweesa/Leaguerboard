@@ -278,7 +278,7 @@ def insert_match_details(game_id):
 
     response = get_match_details(game_id)
 
-    if match['queue'] == 0 or match['queue'] >= 2000: return
+    if response['queueId'] == 0 or response['queueId'] >= 2000: return
     
     # FIXME: None is returned on error from get_match_details. So if there were
     # an error inserting details for match 12345, match 12345 would be absent

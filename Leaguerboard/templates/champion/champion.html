@@ -58,7 +58,7 @@
         } );
     </script>
 
-    <table class="table table-hover">
+    <table id='match-history' class="table table-hover">
         <thead class="thead-dark">
             <tr>
                 <th scope="col">Result</th>
@@ -82,9 +82,9 @@
                 </th>
                 <td><a href={{ url_for('summoner.summoner_stats', summoner=match.name) }}>{{ match.name }}</a></td>
                 <td>{{ match.MatchStat.kills }}/{{ match.MatchStat.deaths }}/{{ match.MatchStat.assists }} </td>
-                <td>{{ match.MatchStat.role }}</td>
-                <td>{{ match.MatchStat.lane }}</td>
-                <td>{{ match.queue }}</td>
+                <td>{{ match.MatchStat.role|readable }}</td>
+                <td>{{ match.MatchStat.lane|readable }}</td>
+                <td>{{ match.queue|queue }}</td>
                 <td><script>
                         var milisecs = {{ match.timestamp }} 
                         var local_time = new Date(milisecs)
@@ -97,3 +97,16 @@
     </table>
 </div>
 {% endblock %}
+
+{% block scripts %}
+    <script>
+        $(document).ready(function() {
+            $('#match-history').DataTable();
+        } );
+    </script>
+{% endblock %}
+
+
+
+
+
