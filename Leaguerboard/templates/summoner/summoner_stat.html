@@ -24,18 +24,31 @@
             <h2> Favorite Champion </h2>
             <p> Champion with the highest number of games played </p>
             <div class="col-lg-6">
-                <img class="img-responsive" src="{{ url_for('static', filename='splash_test.jpg') }}"/>
+                <img class="img-responsive" src="{{ url_for('static', filename='splash/'+champ_names[favorite_champ['key']|string]+'_0.jpg') }}"/>
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-6 text-left">
                 <p>This is some epic statistics about my guy tahm kench he's such pogger guy </p>
+                <ul>
+                    <li> Games Played: {{ favorite_champ['games'] }}
+                    <li> Percentage of games played as this champ {{ "%.2f%%" % (100.0 * favorite_champ['games']/game_count) }}</li>
+                    <li> Win Percentage: {{ "%.2f%%" % (100.0 * favorite_champ['wins']/favorite_champ['games']) }}</li>
+                    <li> Most Common Lane </li>
+                    <li> Most Common Role </li>
+                </ul>
             </div>
         </div>
         <div class="col-lg-6 text-center">
             <h2> Best Champion </h2>
             <p> Champion with the best winrate </p>
 
-            <div class="col-lg-6">
+            <div class="col-lg-6 text-left">
                 <p>Some More epic statistics about my guy tahm kench he's such a pogger guy</p>
+                <ul>
+                    <li> Percentage of games played as this champ </li> 
+                    <li> Win Percentage </li>
+                    <li> Most Common Lane </li>
+                    <li> Most Common Role </li>
+                </ul>
             </div>
             <div class="col-lg-6">
                 <img class="img-responsive" src="{{ url_for('static', filename='splash_test.jpg') }}"/>
@@ -45,7 +58,7 @@
 
     <br>
 
-    <div class="row">
+    <div class="row text-center">
         <table class="table table-bordered">
             <tr>
                 <th scope="col">Played</th>
@@ -62,7 +75,7 @@
 
     <br>
 
-    <div class="row">
+    <div class="row text-center">
         <table id='match-history' class="table table-bordered">
             <thead class="thead-dark">
                 <tr>

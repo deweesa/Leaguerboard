@@ -1,5 +1,5 @@
 from flask import (Blueprint, render_template, request)
-from sqlalchemy import select, text
+from sqlalchemy import select, text, func
 from sqlalchemy.orm import sessionmaker
 from Leaguerboard.models import (Summoner, MatchStat, Match)
 import json
@@ -27,8 +27,26 @@ def summoner_stats(summoner):
 
     match_history = database.session.query(MatchStat, Match).\
             join(Match, MatchStat.game_id==Match.game_id).\
-            filter(MatchStat.account_id==summoner_info.account_id).\
-            all()
+            filter(MatchStat.account_id==summoner_info.account_id).all()
+
+    champ_games = database.session.query(MatchStat.champ, 
+            func.count(MatchStat.game_id).label('count')).\
+            filter(MatchStat.account_id == summoner_info.account_id).\
+            group_by(MatchStat.champ).order_by(text('count DESC')).all()
+
+    champ_wins = database.session.query(MatchStat.champ,
+            func.count(MatchStat.game_id).label('count')).\
+            filter(MatchStat.account_id == summoner_info.account_id,
+                    MatchStat.win == True).group_by(MatchStat.champ).\
+            order_by(text('count DESC')).all()
+
+    favorite_champ = {
+                        'key':champ_games[0].champ, 
+                        'games':champ_games[0].count,
+                        'wins':champ_wins[0].count,
+                      }
+
+    
 
     win_count = 0
     game_count = 0
@@ -48,5 +66,6 @@ def summoner_stats(summoner):
     return render_template('summoner/summoner_stat.html', summoner=summoner, 
                             win_count=win_count, game_count=game_count, 
                             matches=match_history, 
+                            favorite_champ=favorite_champ,
                             champ_names=champ_names, champ_full=champ_full['data'])
 
