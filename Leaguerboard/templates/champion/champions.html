@@ -1,33 +1,5 @@
 {% extends 'base.html' %}
 
-{% block style %}
-    .champ_icon {
-        position: relative;
-        height: 120px;
-        width: 120px;
-    }
-
-    .champ_text {
-        position: absolute;
-        text-align: center;
-        color: #FFFFFF;
-        width: 100%;
-        bottom: 0px;
-        background-color: #333
-    }
-
-    ul.champ_list {
-        column-rule: dotted 1px #333;
-        display: inline-block;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        z-index: 0;
-    }
-
-    li {
-        list-style-type: none;
-    }
-{% endblock %}
-
 {% block header %}
     <h1>{% block title %}Champions{% endblock %}</h1>
 {% endblock %}
