@@ -23,20 +23,59 @@ def summoner_stats(summoner):
     """Get the Match history for a summoner and dispaly them, as well 
        as liftime game/win count and calculated win percentage
     """
+    # Get the summoners account info to query off of
     summoner_info = Summoner.query.filter_by(name=summoner).first()
 
+    favorite_champ, best_champ = __get_fav_best_champ(summoner_info.account_id)
+
+    # Get total match History for the table
     match_history = database.session.query(MatchStat, Match).\
             join(Match, MatchStat.game_id==Match.game_id).\
             filter(MatchStat.account_id==summoner_info.account_id).all()
 
+    win_count = 0
+    game_count = 0
+
+    favorite_lane, favorite_role = __get_common_lane_role(summoner_info.account_id,
+            favorite_champ['key'])
+
+    best_lane, best_role = __get_common_lane_role(summoner_info.account_id,
+            favorite_champ['key'])
+
+    for match in match_history:
+        game_count += 1
+        if match.MatchStat.win: win_count += 1
+    
+    with open('Leaguerboard/static/json/champion_full.json') as f:
+        champ_full = json.load(f)
+    
+    champ_names = champ_full['keys']
+
+    match_history = sorted(match_history, key = lambda x:x.Match.game_id, 
+            reverse=True)
+    
+    return render_template('summoner/summoner_stat.html', summoner=summoner, 
+                            win_count=win_count, game_count=game_count, 
+                            matches=match_history, 
+                            favorite_champ=favorite_champ,
+                            best_champ=best_champ,
+                            favorite_lane=favorite_lane,
+                            favorite_role=favorite_role,
+                            best_lane=best_lane,
+                            best_role=best_role,
+                            champ_names=champ_names, champ_full=champ_full['data'])
+
+
+def __get_fav_best_champ(account_id):
+    # Get list of champs, and their wins
     champ_games = database.session.query(MatchStat.champ, 
             func.count(MatchStat.game_id).label('count')).\
-            filter(MatchStat.account_id == summoner_info.account_id).\
+            filter(MatchStat.account_id == account_id).\
             group_by(MatchStat.champ).order_by(text('champ DESC')).all()
 
     champ_wins = database.session.query(MatchStat.champ,
             func.count(MatchStat.game_id).label('count')).\
-            filter(MatchStat.account_id == summoner_info.account_id,
+            filter(MatchStat.account_id == account_id,
                     MatchStat.win == True).group_by(MatchStat.champ).\
             order_by(text('champ DESC')).all()
 
@@ -76,54 +115,21 @@ def summoner_stats(summoner):
                 and champ['games'] >= 15:
             best_champ = champ
 
-    win_count = 0
-    game_count = 0
+    return favorite_champ, best_champ
 
-    favorite_lane = database.session.query(MatchStat.lane, func.count(MatchStat.lane).label('count')).\
-                        filter(MatchStat.champ == favorite_champ['key'], 
-                               MatchStat.account_id == summoner_info.account_id).\
-                        group_by(MatchStat.lane).order_by(text('count DESC')).all()
 
-    best_lane = database.session.query(MatchStat.lane, func.count(MatchStat.lane).label('count')).\
-                        filter(MatchStat.champ == best_champ['key'],
-                               MatchStat.account_id == summoner_info.account_id).\
-                        group_by(MatchStat.lane).order_by(text('count DESC')).all()
+def __get_common_lane_role(account_id, champ):
+    lane = database.session.query(MatchStat.lane, func.count(MatchStat.lane).label('count')).\
+                    filter(MatchStat.champ == champ, 
+                       MatchStat.account_id == account_id).\
+                       group_by(MatchStat.lane).order_by(text('count DESC')).all()[0]
 
-    favorite_role = database.session.query(MatchStat.role, func.count(MatchStat.role).label('count')).\
-                        filter(MatchStat.champ == favorite_champ['key'],
-                               MatchStat.account_id == summoner_info.account_id).\
-                        group_by(MatchStat.role).order_by(text('count DESC')).all()
+    role = database.session.query(MatchStat.role, func.count(MatchStat.role).label('count')).\
+                        filter(MatchStat.champ == champ,
+                        MatchStat.account_id == account_id).\
+                        group_by(MatchStat.role).order_by(text('count DESC')).all()[0]
 
-    best_role = database.session.query(MatchStat.role, func.count(MatchStat.role).label('count')).\
-                        filter(MatchStat.champ == best_champ['key'],
-                               MatchStat.account_id == summoner_info.account_id).\
-                        group_by(MatchStat.role).order_by(text('count DESC')).all()
-    
-    favorite_lane = favorite_lane[0]
-    best_lane = best_lane[0]
-    favorite_role = favorite_role[0]
-    best_role = best_role[0]
+    return lane, role
 
-    for match in match_history:
-        game_count += 1
-        if match.MatchStat.win: win_count += 1
-    
-    with open('Leaguerboard/static/json/champion_full.json') as f:
-        champ_full = json.load(f)
-    
-    champ_names = champ_full['keys']
 
-    match_history = sorted(match_history, key = lambda x:x.Match.game_id, 
-            reverse=True)
-    
-    return render_template('summoner/summoner_stat.html', summoner=summoner, 
-                            win_count=win_count, game_count=game_count, 
-                            matches=match_history, 
-                            favorite_champ=favorite_champ,
-                            best_champ=best_champ,
-                            favorite_lane=favorite_lane,
-                            favorite_role=favorite_role,
-                            best_lane=best_lane,
-                            best_role=best_role,
-                            champ_names=champ_names, champ_full=champ_full['data'])
 
