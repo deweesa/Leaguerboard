@@ -5,17 +5,25 @@
 {% endblock %}
 
 {% block content %} 
-    {% for champ in champions %}
-        <ul class="champ_list">
-            <li>
+    <div class="container">
+
+        {% for champ in champions %}
+
+        {% if loop.index % 6 == 1 %}
+        <div class="row" style="margin-bottom:30px">
+        {% endif %}
+        
+            <div class="col-lg-2 text-center">
                 <a href="{{ url_for('champions.champion', champ=champ['id']) }}">
-                    <div class="champ_icon" style="background-image: url({{ url_for('static', filename='img/champion/'+champ['image']['full']) }})">
-                        <div class="champ_text">
-                            {{ champ['name'] }}
-                        </div>
-                    </div>
+                    <img class="img-responsive" src="{{ url_for('static', filename='img/champion/' + champ['image']['full']) }}" />
                 </a>
-            </li>
-        </ul>
+            </div>
+
+        {% if loop.index % 6 == 0 %}
+        </div>
+        {% endif %}
+
     {% endfor %}
+    </div>
 {% endblock %}
+        
