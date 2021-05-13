@@ -1,7 +1,7 @@
 from flask import (Blueprint, render_template, request)
 from sqlalchemy import select, text, func
 from sqlalchemy.orm import sessionmaker
-from Leaguerboard.models import (Summoner, MatchStat, Match)
+from Leaguerboard.models import (Summoner, MatchStat, Match, deserialize)
 import json
 from . import database
 
@@ -53,6 +53,9 @@ def summoner_stats(summoner):
 
     match_history = sorted(match_history, key = lambda x:x.Match.game_id, 
             reverse=True)
+
+    favorite_items = __get_common_items(summoner_info.account_id, favorite_champ['key'])
+    best_items = __get_common_items(summoner_info.account_id, best_champ['key'])
     
     return render_template('summoner/summoner_stat.html', summoner=summoner, 
                             win_count=win_count, game_count=game_count, 
@@ -61,8 +64,10 @@ def summoner_stats(summoner):
                             best_champ=best_champ,
                             favorite_lane=favorite_lane,
                             favorite_role=favorite_role,
+                            favorite_items=favorite_items,
                             best_lane=best_lane,
                             best_role=best_role,
+                            best_items=best_items,
                             champ_names=champ_names, champ_full=champ_full['data'])
 
 
@@ -132,4 +137,12 @@ def __get_common_lane_role(account_id, champ):
     return lane, role
 
 
+def __get_common_items(account_id, champ):
+    serial_items = database.session.query(MatchStat.items, func.count(MatchStat.items).label('count')).\
+            filter(MatchStat.account_id==account_id, MatchStat.champ==champ).\
+            group_by(MatchStat.items).order_by(text('count DESC')).all()[0]
+    
+    return deserialize(serial_items.items)
 
+def __get_common_runes(account_id, champ):
+    print('oya oya oya')

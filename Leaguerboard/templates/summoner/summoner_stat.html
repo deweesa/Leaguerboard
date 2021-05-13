@@ -27,13 +27,13 @@
                 <img class="img-responsive" src="{{ url_for('static', filename='splash/'+champ_names[favorite_champ['key']|string]+'_0.jpg') }}"/>
             </div>
             <div class="col-lg-6 text-left">
-                <p>This is some epic statistics about my guy tahm kench he's such pogger guy </p>
                 <ul>
                     <li> Games Played: {{ favorite_champ['games'] }}
                     <li> Percentage of games played as this champ {{ "%.2f%%" % (100.0 * favorite_champ['games']/game_count) }}</li>
                     <li> Win Percentage: {{ "%.2f%%" % (100.0 * favorite_champ['wins']/favorite_champ['games']) }}</li>
                     <li> Most Common Lane: {{ favorite_lane['lane']|readable }} </li>
                     <li> Most Common Role: {{ favorite_role['role']|readable }} </li>
+                    <li> Most Common Items: {{ favorite_items }} </li>
                 </ul>
             </div>
         </div>
@@ -42,13 +42,13 @@
             <p> Champion with the best winrate </p>
 
             <div class="col-lg-6 text-left">
-                <p>Some More epic statistics about my guy tahm kench he's such a pogger guy</p>
                 <ul>
                     <li> Games Played: {{ best_champ['games'] }} </li>
                     <li> Percentage of games played as this champ: {{ "%.2f%%" % (100.0 * best_champ['games']/game_count) }}</li> 
                     <li> Win Percentage: {{ "%.2f%%" % (100.0 * best_champ['wins']/best_champ['games']) }} </li>
                     <li> Most Common Lane: {{ best_lane['lane']|readable }}  </li>
                     <li> Most Common Role: {{ best_role['role']|readable }}</li>
+                    <li> Most Common Items: {{ best_items }}</li>
                 </ul>
             </div>
             <div class="col-lg-6">

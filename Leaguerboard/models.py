@@ -93,6 +93,5 @@ class MatchStat(db.Model):
         serialized += str(stats['{}{}'.format(name, count-1)])
         return serialized
 
-
-
-    
+def deserialize(serialized):
+    return serialized.split(':')
